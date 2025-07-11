@@ -1,29 +1,31 @@
 import os, json
-from fastapi import FastAPI, Request, Form
-from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
-from pydantic import BaseModel
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# CORS agar bisa diakses dari Mini App
+# File JSON
+POIN_FILE = "poin.json"
+RIWAYAT_FILE = "riwayat.json"
+TARIKAN_FILE = "penarikan.json"
+VERIFIKASI_FILE = "verifikasi.json"
+USER_FILE = "user.json"
+REF_FILE = "referral.json"
+
+# CORS agar Mini App & Bot bisa akses
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Bisa diganti domain tertentu
+    allow_origins=["*"],  # Ganti ke ["https://miniapp-fluxion-faucet.vercel.app"] jika ingin lebih aman
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# File JSON
-POIN_FILE = "poin.json"
-RIWAYAT_FILE = "riwayat.json"
-VERIFIKASI_FILE = "verifikasi.json"
-TARIKAN_FILE = "tarikan.json"
-
-# Utils
+# Utilitas JSON
 def load_json(filename):
-    if not os.path.exists(filename): return {}
+    if not os.path.exists(filename):
+        return {}
     try:
         with open(filename, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -34,28 +36,16 @@ def save_json(filename, data):
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
-# Routes
 @app.get("/")
-async def root():
-    return {"status": "ok", "message": "Fluxion Faucet API aktif"}
-
-@app.get("/saldo/{uid}")
-async def get_saldo(uid: str):
-    poin = load_json(POIN_FILE)
-    return {"saldo": poin.get(uid, 0)}
-
-@app.get("/riwayat/{uid}")
-async def get_riwayat(uid: str):
-    riwayat = load_json(RIWAYAT_FILE).get(uid, [])
-    return {"riwayat": riwayat[-5:]}
+def root():
+    return {"status": "ok", "message": "Fluxion API aktif"}
 
 @app.post("/start_session")
 async def start_session(req: Request):
     data = await req.json()
     uid = str(data.get("user_id"))
-    now = datetime.now().isoformat()
     poin = load_json(POIN_FILE)
-    poin[f"{uid}_telega_start"] = now
+    poin[f"{uid}_telega_start"] = datetime.now().isoformat()
     save_json(POIN_FILE, poin)
     return {"status": "ok", "message": "Session dimulai"}
 
@@ -64,7 +54,6 @@ async def add_poin(req: Request):
     data = await req.json()
     uid = str(data.get("user_id"))
     reward = int(data.get("amount"))
-
     poin = load_json(POIN_FILE)
     riwayat = load_json(RIWAYAT_FILE)
     now = datetime.now()
@@ -77,14 +66,14 @@ async def add_poin(req: Request):
     durasi = (now - start_time).total_seconds()
 
     if durasi < 30:
-        return {"status": "error", "message": "Minimal stay 30 detik di iklan"}
+        return {"status": "error", "message": "Stay minimal 30 detik"}
     if durasi > 60:
-        return {"status": "error", "message": "Session kedaluwarsa, silakan mulai ulang"}
+        return {"status": "error", "message": "Session kedaluwarsa"}
 
     last_claim_str = poin.get(f"{uid}_last_telega", "1970-01-01T00:00:00")
     last_claim = datetime.fromisoformat(last_claim_str)
     if (now - last_claim).total_seconds() < 10:
-        return {"status": "error", "message": "Tunggu 10 detik sebelum klaim lagi."}
+        return {"status": "error", "message": "Tunggu 10 detik sebelum klaim lagi"}
 
     poin[uid] = poin.get(uid, 0) + reward
     poin[f"{uid}_last_telega"] = now.isoformat()
@@ -97,57 +86,82 @@ async def add_poin(req: Request):
     })
     save_json(RIWAYAT_FILE, riwayat)
 
-    return {"status": "ok", "message": f"Poin {reward} berhasil ditambahkan"}
+    return {"status": "ok", "message": f"Poin {reward} ditambahkan"}
+
+@app.get("/saldo/{uid}")
+async def get_saldo(uid: str):
+    poin = load_json(POIN_FILE)
+    return {"saldo": poin.get(uid, 0)}
+
+@app.get("/riwayat/{uid}")
+async def get_riwayat(uid: str):
+    riwayat = load_json(RIWAYAT_FILE)
+    return {"riwayat": riwayat.get(uid, [])}
 
 @app.post("/verifikasi")
-async def verifikasi(req: Request):
+async def simpan_verifikasi(req: Request):
     data = await req.json()
     uid = str(data.get("user_id"))
-    input_data = str(data.get("input"))
-
-    verifikasi = load_json(VERIFIKASI_FILE)
-    verifikasi[uid] = {
-        "input": input_data,
+    inputan = data.get("input")
+    verif = load_json(VERIFIKASI_FILE)
+    verif[uid] = {
+        "input": inputan,
         "time": datetime.now().isoformat()
     }
-    save_json(VERIFIKASI_FILE, verifikasi)
+    save_json(VERIFIKASI_FILE, verif)
+    return {"status": "ok", "message": "Verifikasi disimpan"}
 
-    return {"status": "ok", "message": "Verifikasi berhasil disimpan"}
-
-@app.post("/tarik")
-async def tarik(req: Request):
+@app.post("/kirim_poin")
+async def kirim_poin(req: Request):
     data = await req.json()
     uid = str(data.get("user_id"))
-    jumlah = int(data.get("jumlah"))
-    metode = str(data.get("metode"))
-    nomor = str(data.get("nomor"))
+    amount = int(data.get("amount"))
+    poin = load_json(POIN_FILE)
+    poin[uid] = poin.get(uid, 0) + amount
+    save_json(POIN_FILE, poin)
+    return {"status": "ok", "message": f"{amount} poin dikirim ke {uid}"}
+
+@app.get("/referral/{uid}")
+async def get_ref(uid: str):
+    ref = load_json(REF_FILE)
+    return {"jumlah": len(ref.get(uid, []))}
+
+@app.post("/ajukan_tarik")
+async def ajukan_tarik(req: Request):
+    data = await req.json()
+    uid = str(data.get("user_id"))
+    amount = int(data.get("amount"))
+    metode = data.get("metode")
+    nomor = data.get("nomor")
 
     poin = load_json(POIN_FILE)
-    if poin.get(uid, 0) < jumlah:
+    if poin.get(uid, 0) < amount:
         return {"status": "error", "message": "Saldo tidak cukup"}
 
     penarikan = load_json(TARIKAN_FILE)
     penarikan.setdefault(uid, []).append({
-        "amount": jumlah,
+        "amount": amount,
         "metode": metode,
         "nomor": nomor,
         "time": datetime.now().isoformat()
     })
     save_json(TARIKAN_FILE, penarikan)
 
-    poin[uid] -= jumlah
+    poin[uid] -= amount
     save_json(POIN_FILE, poin)
 
     return {"status": "ok", "message": "Penarikan diajukan"}
 
-@app.post("/kirim_poin")
-async def kirim_poin(req: Request):
-    data = await req.json()
-    uid = str(data.get("user_id"))
-    jumlah = int(data.get("jumlah"))
-
+@app.get("/statistik")
+async def statistik():
+    user = load_json(USER_FILE)
     poin = load_json(POIN_FILE)
-    poin[uid] = poin.get(uid, 0) + jumlah
-    save_json(POIN_FILE, poin)
+    verif = load_json(VERIFIKASI_FILE)
+    tarik = load_json(TARIKAN_FILE)
 
-    return {"status": "ok", "message": f"Poin {jumlah} berhasil dikirim ke {uid}"}
+    return {
+        "total_user": len(user),
+        "total_poin": sum(v for k, v in poin.items() if not k.endswith("_telega_start") and not k.endswith("_last_telega")),
+        "total_tarik": sum(len(x) for x in tarik.values()),
+        "total_verifikasi": len(verif)
+    }
