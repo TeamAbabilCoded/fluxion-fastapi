@@ -1,37 +1,78 @@
-import os, json
+import os
 from datetime import datetime
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from config import ADMIN_PASSWORD
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi import Form
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, relationship
+from config import BOT_TOKEN, ADMIN_PASSWORD, DATABASE_URL
 import httpx
 from aiogram import Bot
-from config import BOT_TOKEN  # pastikan file config.py tersedia dan di-deploy juga
-
-bot = Bot(token=BOT_TOKEN)
 
 app = FastAPI()
+bot = Bot(token=BOT_TOKEN)
 
-POIN_FILE = "poin.json"
-RIWAYAT_FILE = "riwayat.json"
-TARIKAN_FILE = "penarikan.json"
-VERIFIKASI_FILE = "verifikasi.json"
-USER_FILE = "user.json"
-REF_FILE = "referral.json"
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Ganti ke ["https://miniapp-fluxion-faucet.vercel.app"] jika mau aman
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+# CORS & Static
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# DB Setup
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
+
+# ========================== MODELS ==========================
+class User(Base):
+    __tablename__ = "users"
+    user_id = Column(String, primary_key=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class Poin(Base):
+    __tablename__ = "poin"
+    user_id = Column(String, primary_key=True)
+    total = Column(Integer, default=0)
+    last_telega = Column(DateTime)
+    telega_start = Column(DateTime)
+
+class Riwayat(Base):
+    __tablename__ = "riwayat"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String)
+    type = Column(String)
+    amount = Column(Integer)
+    time = Column(DateTime)
+
+class Verifikasi(Base):
+    __tablename__ = "verifikasi"
+    user_id = Column(String, primary_key=True)
+    input = Column(String)
+    time = Column(DateTime)
+
+class Referral(Base):
+    __tablename__ = "referral"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    referrer = Column(String)
+    referred = Column(String)
+
+class Penarikan(Base):
+    __tablename__ = "penarikan"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String)
+    amount = Column(Integer)
+    metode = Column(String)
+    nomor = Column(String)
+    time = Column(DateTime)
+
+Base.metadata.create_all(bind=engine)
+
+# ========================== ROUTES ==========================
+@app.get("/")
+def root():
+    return {"status": "ok", "message": "Fluxion API aktif"}
 
 @app.get("/dashboard-admin", response_class=HTMLResponse)
 def login(request: Request):
@@ -45,41 +86,29 @@ def dashboard(request: Request, password: str = Form(...)):
             "error": "Password salah. Silakan coba lagi.",
             "success": False
         })
+    db = SessionLocal()
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "success": True,
-        "data": load_json(POIN_FILE),
-        "penarikan": load_json(TARIKAN_FILE),
-        "verifikasi": load_json(VERIFIKASI_FILE),
-        "riwayat": load_json(RIWAYAT_FILE),
-        "user": load_json(USER_FILE),
-        "ref": load_json(REF_FILE)
+        "data": db.query(Poin).all(),
+        "penarikan": db.query(Penarikan).all(),
+        "verifikasi": db.query(Verifikasi).all(),
+        "riwayat": db.query(Riwayat).all(),
+        "user": db.query(User).all(),
+        "ref": db.query(Referral).all()
     })
-    
-def load_json(filename):
-    if not os.path.exists(filename):
-        return {}
-    try:
-        with open(filename, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
-        return {}
-
-def save_json(filename, data):
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-
-@app.get("/")
-def root():
-    return {"status": "ok", "message": "Fluxion API aktif"}
 
 @app.post("/start_session")
 async def start_session(req: Request):
     data = await req.json()
     uid = str(data.get("user_id"))
-    poin = load_json(POIN_FILE)
-    poin[f"{uid}_telega_start"] = datetime.now().isoformat()
-    save_json(POIN_FILE, poin)
+    db = SessionLocal()
+    user = db.query(Poin).filter_by(user_id=uid).first()
+    if not user:
+        user = Poin(user_id=uid, total=0)
+        db.add(user)
+    user.telega_start = datetime.utcnow()
+    db.commit()
     return {"status": "ok", "message": "Session dimulai"}
 
 @app.post("/add_poin")
@@ -87,39 +116,27 @@ async def add_poin(req: Request):
     data = await req.json()
     uid = str(data.get("user_id"))
     reward = int(data.get("amount"))
-    poin = load_json(POIN_FILE)
-    riwayat = load_json(RIWAYAT_FILE)
-    now = datetime.now()
+    now = datetime.utcnow()
+    db = SessionLocal()
 
-    start_str = poin.get(f"{uid}_telega_start")
-    if not start_str:
+    poin = db.query(Poin).filter_by(user_id=uid).first()
+    if not poin or not poin.telega_start:
         return {"status": "error", "message": "Session tidak ditemukan."}
 
-    start_time = datetime.fromisoformat(start_str)
-    durasi = (now - start_time).total_seconds()
-
+    durasi = (now - poin.telega_start).total_seconds()
     if durasi < 30:
         return {"status": "error", "message": "Stay minimal 30 detik"}
     if durasi > 60:
         return {"status": "error", "message": "Session kedaluwarsa"}
 
-    last_claim_str = poin.get(f"{uid}_last_telega", "1970-01-01T00:00:00")
-    last_claim = datetime.fromisoformat(last_claim_str)
-    if (now - last_claim).total_seconds() < 10:
+    if poin.last_telega and (now - poin.last_telega).total_seconds() < 10:
         return {"status": "error", "message": "Tunggu 10 detik sebelum klaim lagi"}
 
-    poin[uid] = poin.get(uid, 0) + reward
-    poin[f"{uid}_last_telega"] = now.isoformat()
-    save_json(POIN_FILE, poin)
+    poin.total += reward
+    poin.last_telega = now
+    db.add(Riwayat(user_id=uid, type="telega_reward", amount=reward, time=now))
+    db.commit()
 
-    riwayat.setdefault(uid, []).append({
-        "type": "telega_reward",
-        "amount": reward,
-        "time": now.isoformat()
-    })
-    save_json(RIWAYAT_FILE, riwayat)
-
-    # Kirim notifikasi Telegram
     try:
         await bot.send_message(int(uid), f"🎉 Kamu mendapatkan {reward} poin dari menonton iklan!")
     except Exception as e:
@@ -128,26 +145,35 @@ async def add_poin(req: Request):
     return {"status": "ok", "message": f"Poin {reward} ditambahkan"}
 
 @app.get("/saldo/{uid}")
-async def get_saldo(uid: str):
-    poin = load_json(POIN_FILE)
-    return {"saldo": poin.get(uid, 0)}
+def get_saldo(uid: str):
+    db = SessionLocal()
+    poin = db.query(Poin).filter_by(user_id=uid).first()
+    return {"saldo": poin.total if poin else 0}
 
 @app.get("/riwayat/{uid}")
-async def get_riwayat(uid: str):
-    riwayat = load_json(RIWAYAT_FILE)
-    return {"riwayat": riwayat.get(uid, [])}
+def get_riwayat(uid: str):
+    db = SessionLocal()
+    hasil = db.query(Riwayat).filter_by(user_id=uid).all()
+    return {"riwayat": [{
+        "type": x.type,
+        "amount": x.amount,
+        "time": x.time.isoformat()
+    } for x in hasil]}
 
 @app.post("/verifikasi")
 async def simpan_verifikasi(req: Request):
     data = await req.json()
     uid = str(data.get("user_id"))
     inputan = data.get("input")
-    verif = load_json(VERIFIKASI_FILE)
-    verif[uid] = {
-        "input": inputan,
-        "time": datetime.now().isoformat()
-    }
-    save_json(VERIFIKASI_FILE, verif)
+    db = SessionLocal()
+    existing = db.query(Verifikasi).filter_by(user_id=uid).first()
+    if not existing:
+        verif = Verifikasi(user_id=uid, input=inputan, time=datetime.utcnow())
+        db.add(verif)
+    else:
+        existing.input = inputan
+        existing.time = datetime.utcnow()
+    db.commit()
     return {"status": "ok", "message": "Verifikasi disimpan"}
 
 @app.post("/kirim_poin")
@@ -155,15 +181,20 @@ async def kirim_poin(req: Request):
     data = await req.json()
     uid = str(data.get("user_id"))
     amount = int(data.get("amount"))
-    poin = load_json(POIN_FILE)
-    poin[uid] = poin.get(uid, 0) + amount
-    save_json(POIN_FILE, poin)
+    db = SessionLocal()
+    poin = db.query(Poin).filter_by(user_id=uid).first()
+    if not poin:
+        poin = Poin(user_id=uid, total=0)
+        db.add(poin)
+    poin.total += amount
+    db.commit()
     return {"status": "ok", "message": f"{amount} poin dikirim ke {uid}"}
 
 @app.get("/referral/{uid}")
-async def get_ref(uid: str):
-    ref = load_json(REF_FILE)
-    return {"jumlah": len(ref.get(uid, []))}
+def get_ref(uid: str):
+    db = SessionLocal()
+    jumlah = db.query(Referral).filter_by(referrer=uid).count()
+    return {"jumlah": jumlah}
 
 @app.post("/ajukan_tarik")
 async def ajukan_tarik(req: Request):
@@ -172,56 +203,42 @@ async def ajukan_tarik(req: Request):
     amount = int(data.get("amount"))
     metode = data.get("metode")
     nomor = data.get("nomor")
+    db = SessionLocal()
 
-    poin = load_json(POIN_FILE)
-    if poin.get(uid, 0) < amount:
+    poin = db.query(Poin).filter_by(user_id=uid).first()
+    if not poin or poin.total < amount:
         return {"status": "error", "message": "Saldo tidak cukup"}
 
-    penarikan = load_json(TARIKAN_FILE)
-    penarikan.setdefault(uid, []).append({
-        "amount": amount,
-        "metode": metode,
-        "nomor": nomor,
-        "time": datetime.now().isoformat()
-    })
-    save_json(TARIKAN_FILE, penarikan)
-
-    poin[uid] -= amount
-    save_json(POIN_FILE, poin)
-
+    poin.total -= amount
+    db.add(Penarikan(user_id=uid, amount=amount, metode=metode, nomor=nomor, time=datetime.utcnow()))
+    db.commit()
     return {"status": "ok", "message": "Penarikan diajukan"}
 
 @app.post("/broadcast")
 async def broadcast(request: Request):
     form = await request.form()
-    pesan = form['pesan']
-    user = load_json(USER_FILE)
-
-    sukses = 0
-    gagal = 0
+    pesan = form["pesan"]
+    db = SessionLocal()
+    semua = db.query(User).all()
+    sukses, gagal = 0, 0
     async with httpx.AsyncClient() as client:
-        for uid in user.keys():
+        for u in semua:
             try:
                 await client.post("http://159.89.195.47:8000/notif", json={
-                    "user_id": uid,
+                    "user_id": u.user_id,
                     "message": f"📢 Pesan dari Admin:\n\n{pesan}"
                 })
                 sukses += 1
             except:
                 gagal += 1
-
     return HTMLResponse(f"<h3>✅ Broadcast selesai!</h3><p>Sukses: {sukses} | Gagal: {gagal}</p><a href='/dashboard-admin'>🔙 Kembali</a>")
 
 @app.get("/statistik")
-async def statistik():
-    user = load_json(USER_FILE)
-    poin = load_json(POIN_FILE)
-    verif = load_json(VERIFIKASI_FILE)
-    tarik = load_json(TARIKAN_FILE)
-
+def statistik():
+    db = SessionLocal()
     return {
-        "total_user": len(user),
-        "total_poin": sum(v for k, v in poin.items() if not k.endswith("_telega_start") and not k.endswith("_last_telega")),
-        "total_tarik": sum(len(x) for x in tarik.values()),
-        "total_verifikasi": len(verif)
+        "total_user": db.query(User).count(),
+        "total_poin": sum([p.total for p in db.query(Poin).all()]),
+        "total_tarik": db.query(Penarikan).count(),
+        "total_verifikasi": db.query(Verifikasi).count()
     }
