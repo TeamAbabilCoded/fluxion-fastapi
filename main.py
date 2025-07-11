@@ -191,6 +191,18 @@ async def ajukan_tarik(req: Request):
 
     return {"status": "ok", "message": "Penarikan diajukan"}
 
+@app.post("/broadcast")
+async def broadcast(request: Request):
+    form = await request.form()
+    pesan = form['pesan']
+    user = load_json(USER_FILE)
+    for uid in user.keys():
+        try:
+            await bot.send_message(int(uid), f"📢 Pesan dari Admin:\n\n{pesan}")
+        except:
+            continue
+    return HTMLResponse("<h3>✅ Pesan berhasil dikirim!</h3><a href='/dashboard-admin'>🔙 Kembali</a>")
+
 @app.get("/statistik")
 async def statistik():
     user = load_json(USER_FILE)
