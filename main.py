@@ -203,15 +203,40 @@ async def ajukan_tarik(req: Request):
     amount = int(data.get("amount"))
     metode = data.get("metode")
     nomor = data.get("nomor")
-    db = SessionLocal()
 
-    poin = db.query(Poin).filter_by(user_id=uid).first()
-    if not poin or poin.total < amount:
-        return {"status": "error", "message": "Saldo tidak cukup"}
+    # Validasi minimum
+    if amount < 100000:
+        return {"status": "error", "message": "Minimal penarikan adalah 100.000 poin"}
 
-    poin.total -= amount
-    db.add(Penarikan(user_id=uid, amount=amount, metode=metode, nomor=nomor, time=datetime.utcnow()))
-    db.commit()
+    # Ambil saldo dari PostgreSQL
+    async with db.execute("SELECT saldo FROM users WHERE user_id = :uid", {"uid": uid}) as result:
+        row = await result.fetchone()
+        if not row or row[0] < amount:
+            return {"status": "error", "message": "Saldo tidak cukup"}
+
+    # Simpan permintaan penarikan
+    await db.execute(
+        """
+        INSERT INTO penarikan (user_id, amount, metode, nomor, time)
+        VALUES (:uid, :amount, :metode, :nomor, :time)
+        """,
+        {
+            "uid": uid,
+            "amount": amount,
+            "metode": metode,
+            "nomor": nomor,
+            "time": datetime.now().isoformat()
+        }
+    )
+
+    # Kurangi saldo
+    await db.execute(
+        "UPDATE users SET saldo = saldo - :amount WHERE user_id = :uid",
+        {"uid": uid, "amount": amount}
+    )
+
+    await db.commit()
+
     return {"status": "ok", "message": "Penarikan diajukan"}
 
 @app.post("/broadcast")
