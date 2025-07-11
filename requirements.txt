@@ -1,7 +1,9 @@
 fastapi
-uvicorn
+uvicorn[standard]
+sqlalchemy
+asyncpg
+python-multipart
 aiofiles
 jinja2
-python-multipart
 aiogram
 httpx
