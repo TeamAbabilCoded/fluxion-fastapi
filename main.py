@@ -1,5 +1,6 @@
 import os, json
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from datetime import datetime
 
@@ -22,6 +23,15 @@ def save_json(filename, data):
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2)
 
+# Aktifkan CORS supaya Mini App bisa akses API ini
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # atau ["https://miniapp-fluxion-faucet.vercel.app"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# lalu lanjutkan seperti biasa
 @app.get("/")
 async def root():
     return {"status": "ok", "message": "Fluxion Faucet API aktif"}
