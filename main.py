@@ -91,3 +91,7 @@ async def add_poin(req: Request):
 
     return {"status": "ok", "message": f"Poin {reward} berhasil ditambahkan"}
 
+@app.get("/saldo/{uid}")
+async def get_saldo(uid: str):
+    poin = load_json(POIN_FILE)
+    return {"saldo": poin.get(uid, 0)}
