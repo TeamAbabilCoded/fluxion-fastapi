@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi import Form
-
+import httpx
 from aiogram import Bot
 from config import BOT_TOKEN  # pastikan file config.py tersedia dan di-deploy juga
 
@@ -196,12 +196,21 @@ async def broadcast(request: Request):
     form = await request.form()
     pesan = form['pesan']
     user = load_json(USER_FILE)
-    for uid in user.keys():
-        try:
-            await bot.send_message(int(uid), f"📢 Pesan dari Admin:\n\n{pesan}")
-        except:
-            continue
-    return HTMLResponse("<h3>✅ Pesan berhasil dikirim!</h3><a href='/dashboard-admin'>🔙 Kembali</a>")
+
+    sukses = 0
+    gagal = 0
+    async with httpx.AsyncClient() as client:
+        for uid in user.keys():
+            try:
+                await client.post("http://159.89.195.47:8000/notif", json={
+                    "user_id": uid,
+                    "message": f"📢 Pesan dari Admin:\n\n{pesan}"
+                })
+                sukses += 1
+            except:
+                gagal += 1
+
+    return HTMLResponse(f"<h3>✅ Broadcast selesai!</h3><p>Sukses: {sukses} | Gagal: {gagal}</p><a href='/dashboard-admin'>🔙 Kembali</a>")
 
 @app.get("/statistik")
 async def statistik():
