@@ -10,6 +10,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from config import BOT_TOKEN, ADMIN_PASSWORD, DATABASE_URL
 import httpx
+from db import get_db_conn
 from aiogram import Bot
 
 app = FastAPI()
@@ -204,38 +205,36 @@ async def ajukan_tarik(req: Request):
     metode = data.get("metode")
     nomor = data.get("nomor")
 
-    # Validasi minimum
-    if amount < 100000:
+    if amount < 100_000:
         return {"status": "error", "message": "Minimal penarikan adalah 100.000 poin"}
 
-    # Ambil saldo dari PostgreSQL
-    async with db.execute("SELECT saldo FROM users WHERE user_id = :uid", {"uid": uid}) as result:
-        row = await result.fetchone()
-        if not row or row[0] < amount:
-            return {"status": "error", "message": "Saldo tidak cukup"}
+    conn = get_db_conn()
+    cur = conn.cursor()
 
-    # Simpan permintaan penarikan
-    await db.execute(
-        """
-        INSERT INTO penarikan (user_id, amount, metode, nomor, time)
-        VALUES (:uid, :amount, :metode, :nomor, :time)
-        """,
-        {
-            "uid": uid,
-            "amount": amount,
-            "metode": metode,
-            "nomor": nomor,
-            "time": datetime.now().isoformat()
-        }
-    )
+    # Cek saldo user
+    cur.execute("SELECT poin FROM users WHERE user_id = %s", (uid,))
+    result = cur.fetchone()
+
+    if not result:
+        return {"status": "error", "message": "User tidak ditemukan"}
+    
+    saldo = result[0]
+
+    if saldo < amount:
+        return {"status": "error", "message": "Saldo tidak cukup"}
 
     # Kurangi saldo
-    await db.execute(
-        "UPDATE users SET saldo = saldo - :amount WHERE user_id = :uid",
-        {"uid": uid, "amount": amount}
-    )
+    cur.execute("UPDATE users SET poin = poin - %s WHERE user_id = %s", (amount, uid))
 
-    await db.commit()
+    # Simpan penarikan
+    cur.execute("""
+        INSERT INTO penarikan (user_id, amount, metode, nomor, time)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (uid, amount, metode, nomor, datetime.now()))
+
+    conn.commit()
+    cur.close()
+    conn.close()
 
     return {"status": "ok", "message": "Penarikan diajukan"}
 
