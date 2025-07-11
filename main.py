@@ -2,6 +2,11 @@ import os, json
 from datetime import datetime
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from config import ADMIN_PASSWORD
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi import Form
 
 from aiogram import Bot
 from config import BOT_TOKEN  # pastikan file config.py tersedia dan di-deploy juga
@@ -25,6 +30,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/dashboard-admin", response_class=HTMLResponse)
+def login(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.post("/dashboard-admin", response_class=HTMLResponse)
+def dashboard(request: Request, password: str = Form(...)):
+    if password != ADMIN_PASSWORD:
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": "Password salah. Silakan coba lagi.",
+            "success": False
+        })
+    return templates.TemplateResponse("dashboard.html", {
+        "request": request,
+        "success": True,
+        "data": load_json(POIN_FILE),
+        "penarikan": load_json(TARIKAN_FILE),
+        "verifikasi": load_json(VERIFIKASI_FILE),
+        "riwayat": load_json(RIWAYAT_FILE),
+        "user": load_json(USER_FILE),
+        "ref": load_json(REF_FILE)
+    })
+    
 def load_json(filename):
     if not os.path.exists(filename):
         return {}
