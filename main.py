@@ -138,11 +138,11 @@ async def add_poin(req: Request):
     db.commit()
 
     try:
-        await bot.send_message(int(uid), f"🎉 Kamu mendapatkan {reward} poin dari menonton iklan!")
+        await bot.send_message(int(uid), f"🎉 Kamu mendapatkan Rp {reward} poin dari menonton iklan!")
     except Exception as e:
         print("Gagal kirim notifikasi:", e)
 
-    return {"status": "ok", "message": f"Poin {reward} ditambahkan"}
+    return {"status": "ok", "message": f"Poin Rp {reward} ditambahkan"}
 
 @app.get("/saldo/{uid}")
 def get_saldo(uid: str):
@@ -188,7 +188,7 @@ async def kirim_poin(req: Request):
         db.add(poin)
     poin.total += amount
     db.commit()
-    return {"status": "ok", "message": f"{amount} poin dikirim ke {uid}"}
+    return {"status": "ok", "message": f"Rp {amount} poin dikirim ke {uid}"}
 
 @app.get("/referral/{uid}")
 def get_ref(uid: str):
