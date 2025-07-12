@@ -234,36 +234,31 @@ async def ajukan_tarik(req: Request):
     return {"status": "ok", "message": "Penarikan diajukan"}
 
 @router.post("/konfirmasi_tarik")
-async def konfirmasi_tarik(req: Request):
+def konfirmasi_tarik(req: Request):
     data = await req.json()
     user_id = str(data.get("user_id"))
     jumlah = int(data.get("jumlah", 0))
-    status = data.get("status")  # "diterima" atau "ditolak"
+    status = data.get("status")
 
     if not user_id or jumlah <= 0 or status not in ["diterima", "ditolak"]:
         return {"error": "Data tidak valid"}
 
-    async with db.transaction():
-        # Update status penarikan
-        await db.execute(
-            """
-            UPDATE penarikan 
-            SET status = :status 
-            WHERE user_id = :uid AND amount = :amt AND status = 'pending'
-            """,
-            {"status": status, "uid": user_id, "amt": jumlah}
-        )
+    db = SessionLocal()
 
-        # Kalau ditolak, kembalikan saldo
-        if status == "ditolak":
-            await db.execute(
-                """
-                UPDATE poin 
-                SET saldo = saldo + :amt 
-                WHERE user_id = :uid
-                """,
-                {"amt": jumlah, "uid": user_id}
-            )
+    # Update status penarikan
+    penarikan = db.query(Penarikan).filter_by(user_id=user_id, amount=jumlah, status="pending").first()
+    if not penarikan:
+        return {"error": "Penarikan tidak ditemukan atau sudah diproses"}
+
+    penarikan.status = status
+
+    # Kembalikan saldo kalau ditolak
+    if status == "ditolak":
+        poin = db.query(Poin).filter_by(user_id=user_id).first()
+        if poin:
+            poin.total += jumlah
+
+    db.commit()
 
     # Kirim notifikasi ke user Telegram
     pesan = (
@@ -272,17 +267,22 @@ async def konfirmasi_tarik(req: Request):
         else f"❌ Penarikan Rp {jumlah} kamu *DITOLAK*. Saldo dikembalikan ke akun kamu."
     )
 
-    async def kirim_notif():
-        async with httpx.AsyncClient() as client:
-            await client.post(BOT_API, data={
-                "chat_id": user_id,
-                "text": pesan,
-                "parse_mode": "Markdown"
-            })
-
-    asyncio.create_task(kirim_notif())
+    try:
+        import asyncio
+        asyncio.create_task(kirim_notif(user_id, pesan))
+    except:
+        pass
 
     return {"message": f"Penarikan {status}"}
+
+
+async def kirim_notif(user_id, pesan):
+    async with httpx.AsyncClient() as client:
+        await client.post(BOT_API, data={
+            "chat_id": user_id,
+            "text": pesan,
+            "parse_mode": "Markdown"
+        })
     
 app.include_router(router)
     
@@ -314,11 +314,3 @@ def statistik():
         "total_tarik": db.query(Penarikan).count(),
         "total_verifikasi": db.query(Verifikasi).count()
     }
-
-@app.on_event("startup")
-async def startup():
-    await db.connect()
-
-@app.on_event("shutdown")
-async def shutdown():
-    await db.disconnect()
