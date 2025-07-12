@@ -208,27 +208,51 @@ async def ajukan_tarik(req: Request):
         return {"status": "error", "message": "Minimal penarikan adalah 100.000 poin"}
 
     db = SessionLocal()
-    user_poin = db.query(Poin).filter_by(user_id=uid).first()
+    poin = db.query(Poin).filter_by(user_id=uid).first()
 
-    if not user_poin:
-        return {"status": "error", "message": "User tidak ditemukan"}
-
-    if user_poin.total < amount:
+    if not poin or poin.total < amount:
         return {"status": "error", "message": "Saldo tidak cukup"}
 
-    # Kurangi saldo dan simpan penarikan
-    user_poin.total -= amount
-    penarikan = Penarikan(
+    poin.total -= amount
+    tarik = Penarikan(
         user_id=uid,
         amount=amount,
         metode=metode,
         nomor=nomor,
-        time=datetime.utcnow()
+        time=datetime.utcnow(),
+        status="pending"  # Harus pending dulu
     )
-    db.add(penarikan)
+    db.add(tarik)
     db.commit()
 
     return {"status": "ok", "message": "Penarikan diajukan"}
+
+@app.get("/approve/{tarik_id}")
+def approve_tarik(tarik_id: int):
+    db = SessionLocal()
+    tarik = db.query(Penarikan).filter_by(id=tarik_id).first()
+    if not tarik:
+        return {"status": "error", "message": "Penarikan tidak ditemukan"}
+    
+    tarik.status = "approved"
+    db.commit()
+    return {"status": "ok", "message": "Penarikan disetujui"}
+
+@app.get("/reject/{tarik_id}")
+def reject_tarik(tarik_id: int):
+    db = SessionLocal()
+    tarik = db.query(Penarikan).filter_by(id=tarik_id).first()
+    if not tarik:
+        return {"status": "error", "message": "Penarikan tidak ditemukan"}
+
+    # Refund saldo
+    user_poin = db.query(Poin).filter_by(user_id=tarik.user_id).first()
+    if user_poin:
+        user_poin.total += tarik.amount
+
+    tarik.status = "rejected"
+    db.commit()
+    return {"status": "ok", "message": "Penarikan ditolak & saldo dikembalikan"}
 
 @app.post("/broadcast")
 async def broadcast(request: Request):
