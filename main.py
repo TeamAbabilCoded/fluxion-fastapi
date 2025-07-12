@@ -314,3 +314,11 @@ def statistik():
         "total_tarik": db.query(Penarikan).count(),
         "total_verifikasi": db.query(Verifikasi).count()
     }
+
+@app.on_event("startup")
+async def startup():
+    await db.connect()
+
+@app.on_event("shutdown")
+async def shutdown():
+    await db.disconnect()
