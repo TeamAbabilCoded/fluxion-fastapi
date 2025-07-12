@@ -15,6 +15,7 @@ from aiogram import Bot
 
 router = APIRouter()
 app = FastAPI()
+app.include_router(router)
 bot = Bot(token=BOT_TOKEN)
 
 # CORS & Static
@@ -280,7 +281,9 @@ async def konfirmasi_tarik(req: Request):
     asyncio.create_task(kirim_notif())
 
     return {"message": f"Penarikan {status}"}
-
+    
+    app.include_router(router)
+    
 @app.post("/broadcast")
 async def broadcast(request: Request):
     form = await request.form()
