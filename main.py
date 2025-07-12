@@ -10,8 +10,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from config import BOT_TOKEN, ADMIN_PASSWORD, DATABASE_URL
 import httpx
+import APIRouter
 from aiogram import Bot
 
+router = APIRouter()
 app = FastAPI()
 bot = Bot(token=BOT_TOKEN)
 
@@ -228,33 +230,44 @@ async def ajukan_tarik(req: Request):
 
     return {"status": "ok", "message": "Penarikan diajukan"}
 
-@app.post("/konfirmasi_tarik")
+@router.post("/konfirmasi_tarik")
 async def konfirmasi_tarik(req: Request):
     data = await req.json()
-    user_id = str(data["user_id"])
-    jumlah = int(data["jumlah"])
-    status = data["status"]  # "diterima" atau "ditolak"
+    user_id = str(data.get("user_id"))
+    jumlah = int(data.get("jumlah", 0))
+    status = data.get("status")  # "diterima" atau "ditolak"
+
+    if not user_id or jumlah <= 0 or status not in ["diterima", "ditolak"]:
+        return {"error": "Data tidak valid"}
 
     async with db.transaction():
         # Update status penarikan
         await db.execute(
-            "UPDATE penarikan SET status = :status WHERE user_id = :uid AND amount = :amt AND status = 'pending'",
+            """
+            UPDATE penarikan 
+            SET status = :status 
+            WHERE user_id = :uid AND amount = :amt AND status = 'pending'
+            """,
             {"status": status, "uid": user_id, "amt": jumlah}
         )
 
-        # Kalau ditolak, kembalikan saldo user
+        # Kalau ditolak, kembalikan saldo
         if status == "ditolak":
             await db.execute(
-                "UPDATE poin SET saldo = saldo + :amt WHERE user_id = :uid",
+                """
+                UPDATE poin 
+                SET saldo = saldo + :amt 
+                WHERE user_id = :uid
+                """,
                 {"amt": jumlah, "uid": user_id}
             )
 
-    # Notifikasi ke user via bot Telegram
-    pesan = ""
-    if status == "diterima":
-        pesan = f"✅ Penarikan Rp {jumlah} kamu telah *DITERIMA*. Dana akan segera dikirim!"
-    else:
-        pesan = f"❌ Penarikan Rp {jumlah} kamu *DITOLAK*. Saldo dikembalikan ke akun kamu."
+    # Kirim notifikasi ke user Telegram
+    pesan = (
+        f"✅ Penarikan Rp {jumlah} kamu telah *DITERIMA*. Dana akan segera dikirim!"
+        if status == "diterima"
+        else f"❌ Penarikan Rp {jumlah} kamu *DITOLAK*. Saldo dikembalikan ke akun kamu."
+    )
 
     async def kirim_notif():
         async with httpx.AsyncClient() as client:
