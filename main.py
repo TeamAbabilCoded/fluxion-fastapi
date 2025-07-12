@@ -13,6 +13,8 @@ from config import BOT_TOKEN, ADMIN_PASSWORD, DATABASE_URL
 import httpx
 from aiogram import Bot
 
+BOT_API = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+
 router = APIRouter()
 app = FastAPI()
 app.include_router(router)
