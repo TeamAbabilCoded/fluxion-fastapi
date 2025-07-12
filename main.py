@@ -228,32 +228,45 @@ async def ajukan_tarik(req: Request):
 
     return {"status": "ok", "message": "Penarikan diajukan"}
 
-@app.get("/approve/{tarik_id}")
-def approve_tarik(tarik_id: int):
-    db = SessionLocal()
-    tarik = db.query(Penarikan).filter_by(id=tarik_id).first()
-    if not tarik:
-        return {"status": "error", "message": "Penarikan tidak ditemukan"}
-    
-    tarik.status = "approved"
-    db.commit()
-    return {"status": "ok", "message": "Penarikan disetujui"}
+@app.post("/konfirmasi_tarik")
+async def konfirmasi_tarik(req: Request):
+    data = await req.json()
+    user_id = str(data["user_id"])
+    jumlah = int(data["jumlah"])
+    status = data["status"]  # "diterima" atau "ditolak"
 
-@app.get("/reject/{tarik_id}")
-def reject_tarik(tarik_id: int):
-    db = SessionLocal()
-    tarik = db.query(Penarikan).filter_by(id=tarik_id).first()
-    if not tarik:
-        return {"status": "error", "message": "Penarikan tidak ditemukan"}
+    async with db.transaction():
+        # Update status penarikan
+        await db.execute(
+            "UPDATE penarikan SET status = :status WHERE user_id = :uid AND amount = :amt AND status = 'pending'",
+            {"status": status, "uid": user_id, "amt": jumlah}
+        )
 
-    # Refund saldo
-    user_poin = db.query(Poin).filter_by(user_id=tarik.user_id).first()
-    if user_poin:
-        user_poin.total += tarik.amount
+        # Kalau ditolak, kembalikan saldo user
+        if status == "ditolak":
+            await db.execute(
+                "UPDATE poin SET saldo = saldo + :amt WHERE user_id = :uid",
+                {"amt": jumlah, "uid": user_id}
+            )
 
-    tarik.status = "rejected"
-    db.commit()
-    return {"status": "ok", "message": "Penarikan ditolak & saldo dikembalikan"}
+    # Notifikasi ke user via bot Telegram
+    pesan = ""
+    if status == "diterima":
+        pesan = f"✅ Penarikan Rp {jumlah} kamu telah *DITERIMA*. Dana akan segera dikirim!"
+    else:
+        pesan = f"❌ Penarikan Rp {jumlah} kamu *DITOLAK*. Saldo dikembalikan ke akun kamu."
+
+    async def kirim_notif():
+        async with httpx.AsyncClient() as client:
+            await client.post(BOT_API, data={
+                "chat_id": user_id,
+                "text": pesan,
+                "parse_mode": "Markdown"
+            })
+
+    asyncio.create_task(kirim_notif())
+
+    return {"message": f"Penarikan {status}"}
 
 @app.post("/broadcast")
 async def broadcast(request: Request):
