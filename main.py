@@ -282,7 +282,7 @@ async def konfirmasi_tarik(req: Request):
 
     return {"message": f"Penarikan {status}"}
     
-    app.include_router(router)
+app.include_router(router)
     
 @app.post("/broadcast")
 async def broadcast(request: Request):
