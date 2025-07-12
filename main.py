@@ -235,24 +235,27 @@ async def ajukan_tarik(req: Request):
 
 @router.post("/konfirmasi_tarik")
 async def konfirmasi_tarik(req: Request):
-    data = await req.json()
+    try:
+        data = await req.json()
+    except Exception:
+        return JSONResponse(status_code=400, content={"error": "Request harus berupa JSON."})
+
     user_id = str(data.get("user_id"))
     jumlah = int(data.get("jumlah", 0))
     status = data.get("status")
 
     if not user_id or jumlah <= 0 or status not in ["diterima", "ditolak"]:
-        return {"error": "Data tidak valid"}
+        return JSONResponse(status_code=400, content={"error": "Data tidak valid"})
 
     db = SessionLocal()
 
-    # Update status penarikan
     penarikan = db.query(Penarikan).filter_by(user_id=user_id, amount=jumlah, status="pending").first()
     if not penarikan:
-        return {"error": "Penarikan tidak ditemukan atau sudah diproses"}
+        return JSONResponse(status_code=404, content={"error": "Penarikan tidak ditemukan atau sudah diproses"})
 
     penarikan.status = status
 
-    # Kembalikan saldo kalau ditolak
+    # Kalau ditolak, kembalikan saldo
     if status == "ditolak":
         poin = db.query(Poin).filter_by(user_id=user_id).first()
         if poin:
@@ -260,7 +263,6 @@ async def konfirmasi_tarik(req: Request):
 
     db.commit()
 
-    # Kirim notifikasi ke user Telegram
     pesan = (
         f"✅ Penarikan Rp {jumlah} kamu telah *DITERIMA*. Dana akan segera dikirim!"
         if status == "diterima"
@@ -270,12 +272,12 @@ async def konfirmasi_tarik(req: Request):
     try:
         import asyncio
         asyncio.create_task(kirim_notif(user_id, pesan))
-    except:
-        pass
+    except Exception as e:
+        print(f"[❌] Gagal mengirim notifikasi ke {user_id}:", e)
 
     return {"message": f"Penarikan {status}"}
 
-
+# Fungsi notifikasi Telegram
 async def kirim_notif(user_id, pesan):
     async with httpx.AsyncClient() as client:
         await client.post(BOT_API, data={
