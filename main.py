@@ -234,7 +234,7 @@ async def ajukan_tarik(req: Request):
     return {"status": "ok", "message": "Penarikan diajukan"}
 
 @router.post("/konfirmasi_tarik")
-def konfirmasi_tarik(req: Request):
+async def konfirmasi_tarik(req: Request):
     data = await req.json()
     user_id = str(data.get("user_id"))
     jumlah = int(data.get("jumlah", 0))
