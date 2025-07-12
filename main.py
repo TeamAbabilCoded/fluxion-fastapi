@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from fastapi import FastAPI, Request, Form
+from fastapi import APIRouter import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
@@ -10,7 +10,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from config import BOT_TOKEN, ADMIN_PASSWORD, DATABASE_URL
 import httpx
-import APIRouter
 from aiogram import Bot
 
 router = APIRouter()
