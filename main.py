@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
-from fastapi import APIRouter import FastAPI, Request, Form
+import APIRouter
+from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
