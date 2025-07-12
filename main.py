@@ -66,6 +66,7 @@ class Penarikan(Base):
     metode = Column(String)
     nomor = Column(String)
     time = Column(DateTime)
+    status = Column(String, default="pending")  # Tambahkan ini
 
 Base.metadata.create_all(bind=engine)
 
