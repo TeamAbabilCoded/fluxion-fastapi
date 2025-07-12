@@ -10,7 +10,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from config import BOT_TOKEN, ADMIN_PASSWORD, DATABASE_URL
 import httpx
-from db import get_db_conn
 from aiogram import Bot
 
 app = FastAPI()
@@ -208,33 +207,26 @@ async def ajukan_tarik(req: Request):
     if amount < 100_000:
         return {"status": "error", "message": "Minimal penarikan adalah 100.000 poin"}
 
-    conn = get_db_conn()
-    cur = conn.cursor()
+    db = SessionLocal()
+    user_poin = db.query(Poin).filter_by(user_id=uid).first()
 
-    # Cek saldo user
-    cur.execute("SELECT poin FROM users WHERE user_id = %s", (uid,))
-    result = cur.fetchone()
-
-    if not result:
+    if not user_poin:
         return {"status": "error", "message": "User tidak ditemukan"}
-    
-    saldo = result[0]
 
-    if saldo < amount:
+    if user_poin.total < amount:
         return {"status": "error", "message": "Saldo tidak cukup"}
 
-    # Kurangi saldo
-    cur.execute("UPDATE users SET poin = poin - %s WHERE user_id = %s", (amount, uid))
-
-    # Simpan penarikan
-    cur.execute("""
-        INSERT INTO penarikan (user_id, amount, metode, nomor, time)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (uid, amount, metode, nomor, datetime.now()))
-
-    conn.commit()
-    cur.close()
-    conn.close()
+    # Kurangi saldo dan simpan penarikan
+    user_poin.total -= amount
+    penarikan = Penarikan(
+        user_id=uid,
+        amount=amount,
+        metode=metode,
+        nomor=nomor,
+        time=datetime.utcnow()
+    )
+    db.add(penarikan)
+    db.commit()
 
     return {"status": "ok", "message": "Penarikan diajukan"}
 
