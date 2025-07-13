@@ -238,33 +238,43 @@ async def ajukan_tarik(req: Request):
 async def konfirmasi_tarik(req: Request):
     try:
         data = await req.json()
-        print("DATA MASUK:", data)
+        print("✅ DATA MASUK:", data)
 
-        user_id = int(data.get("user_id"))
+        # Gunakan str karena di database user_id bertipe VARCHAR
+        user_id = str(data.get("user_id"))
         jumlah = int(data.get("jumlah", 0))
         status = data.get("status")
-        print(f"Parsed: user_id={user_id}, jumlah={jumlah}, status={status}")
+        print(f"📌 Parsed: user_id={user_id}, jumlah={jumlah}, status={status}")
 
+        # Validasi data
         if not user_id or jumlah <= 0 or status not in ["diterima", "ditolak"]:
             raise HTTPException(status_code=400, detail="Data tidak valid")
 
         db = SessionLocal()
         try:
+            # Cari penarikan yang sesuai
             penarikan = db.query(Penarikan).filter_by(
                 user_id=user_id, amount=jumlah, status="pending"
             ).first()
+
             if not penarikan:
-                print("Penarikan tidak ditemukan")
+                print("⚠️ Penarikan tidak ditemukan")
                 raise HTTPException(status_code=404, detail="Penarikan tidak ditemukan")
 
+            # Update status
             penarikan.status = status
+
+            # Jika ditolak, kembalikan poin
             if status == "ditolak":
                 poin = db.query(Poin).filter_by(user_id=user_id).first()
                 if poin:
                     poin.total += jumlah
-                    print(f"Poin dikembalikan: +{jumlah}")
+                    print(f"↩️ Poin dikembalikan: +{jumlah}")
 
+            # Simpan perubahan
             db.commit()
+            print("✅ Commit berhasil")
+
         except Exception as e:
             db.rollback()
             print("❌ Error saat commit:", e)
@@ -272,7 +282,9 @@ async def konfirmasi_tarik(req: Request):
         finally:
             db.close()
 
-        asyncio.create_task(kirim_notif(user_id, f"✅ Penarikan diterima" if status=="diterima" else "❌ Penarikan ditolak"))
+        # Kirim notifikasi ke user
+        pesan = "✅ Penarikan diterima" if status == "diterima" else "❌ Penarikan ditolak"
+        asyncio.create_task(kirim_notif(user_id, pesan))
 
         return {"status": "ok", "message": f"Penarikan {status}"}
 
