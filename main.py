@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from routes.auth import router as auth_router
 from routes.tarik import router as tarik_router
 from routes.poin import router as poin_router
-from routes.user import router as user_router
+from routes.users import router as user_router
 
 # Inisialisasi DB (membuat tabel jika belum ada)
 from database import init_db
