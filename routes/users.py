@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
+from db import SessionLocal
 from database import get_db
 from models.models import User, Poin, Riwayat, Referral, Penarikan, Verifikasi
 from schemas.schemas import StartSessionRequest, ReferralRequest
