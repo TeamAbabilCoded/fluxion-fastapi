@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 from schemas.schemas import ReferralRequest
-from models.models import Referral, User
+from models.models import Referral, User, Poin
 
 router = APIRouter()
 
