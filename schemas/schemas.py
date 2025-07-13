@@ -19,10 +19,6 @@ class StartSessionRequest(BaseModel):
 class ReferralRequest(BaseModel):
     user_id: str
     ref_id: str
-    
-class StartSessionRequest(BaseModel):
-    user_id: UserIDStr
-
 
 class AddPoinRequest(BaseModel):
     user_id: UserIDStr
