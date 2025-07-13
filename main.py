@@ -237,7 +237,7 @@ async def ajukan_tarik(req: Request):
 @router.post("/konfirmasi_tarik")
 async def konfirmasi_tarik(req: Request):
     data = await req.json()
-    user_id = str(data.get("user_id"))
+    user_id = int(data.get("user_id"))
     jumlah = int(data.get("jumlah", 0))
     status = data.get("status")
     if not user_id or jumlah <= 0 or status not in ["diterima", "ditolak"]:
