@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy.orm import Session
 from database import SessionLocal
-from models.models import Poin, Riwayat, Verifikasi
+from models.models import Poin, User, Riwayat, Verifikasi
 from schemas.schemas import (
     StartSessionRequest,
     AddPoinRequest,
