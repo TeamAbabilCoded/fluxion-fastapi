@@ -71,7 +71,7 @@ class Referral(Base):
 class Penarikan(Base):
     __tablename__ = "penarikan"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(String)
+    user_id = Column(BigInteger)   # Ubah dari String ke BigInteger
     amount = Column(Integer)
     metode = Column(String)
     nomor = Column(String)
@@ -245,7 +245,7 @@ async def konfirmasi_tarik(req: Request):
         print("✅ DATA MASUK:", data)
 
         # Gunakan str karena di database user_id bertipe VARCHAR
-        user_id = str(data.get("user_id"))
+        user_id = int(data.get("user_id"))
         jumlah = int(data.get("jumlah", 0))
         status = data.get("status")
         print(f"📌 Parsed: user_id={user_id}, jumlah={jumlah}, status={status}")
