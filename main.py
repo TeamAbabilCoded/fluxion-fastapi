@@ -12,6 +12,8 @@ from routes.referral import router as referral_router
 
 # Inisialisasi DB
 from database import init_db
+import builtins
+print("str() aman:", str is builtins.str)
 
 app = FastAPI(title="Fluxion Faucet API")
 
