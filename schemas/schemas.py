@@ -29,7 +29,7 @@ class AddPoinRequest(BaseModel):
 
 
 class KirimPoinRequest(BaseModel):
-    user_id: UserIDStr
+    user_id: int
     amount: PositiveInt
 
 
