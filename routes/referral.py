@@ -36,7 +36,7 @@ async def create_referral(data: ReferralRequest, db: Session = Depends(get_db)):
         poin_referrer.total += 1000
 
     db.commit()
-    bot_api_url = "https://your-bot-api/send_message"
+    bot_api_url = "https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     message = f"🎉 Kamu mendapatkan 1000 poin karena berhasil mereferensikan user baru!"
 
     async with httpx.AsyncClient() as client:
