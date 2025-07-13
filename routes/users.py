@@ -23,6 +23,18 @@ async def create_user(data: StartSessionRequest, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     return {"status": "ok", "message": "User berhasil ditambahkan"}
+
+@app.get("/user/{uid}")
+def get_user(uid: str):
+    db = SessionLocal()
+    user = db.query(Poin).filter_by(user_id=uid).first()
+    
+    if not user:
+        user = Poin(user_id=uid, total=0)
+        db.add(user)
+        db.commit()
+    
+    return {"user_id": uid, "total": user.total}
     
 @router.get("/saldo/{uid}")
 def get_saldo(uid: str, db: Session = Depends(get_db)):
