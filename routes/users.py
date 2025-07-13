@@ -1,41 +1,36 @@
 from datetime import datetime
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+
 from schemas.schemas import StartSessionRequest
 from models.models import User, Poin, Riwayat, Referral, Penarikan, Verifikasi
-from database import SessionLocal
+from database import get_db  # Ganti SessionLocal manual dengan Depends
 
 router = APIRouter()
 
 @router.get("/ping")
 def ping():
-    return {"message": "user route aktif"}
+    return {"message": "✅ User route aktif"}
 
-@router.post("/user")
-async def create_user(data: StartSessionRequest):
+@router.post("/")
+async def create_user(data: StartSessionRequest, db: Session = Depends(get_db)):
     uid = data.user_id
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter_by(user_id=uid).first()
-        if user:
-            return {"status": "ok", "message": "User sudah ada"}
-        
-        new_user = User(user_id=uid, created_at=datetime.utcnow())
-        db.add(new_user)
-        db.commit()
-        return {"status": "ok", "message": "User berhasil ditambahkan"}
-    finally:
-        db.close()
+    user = db.query(User).filter_by(user_id=uid).first()
+    if user:
+        return {"status": "ok", "message": "User sudah ada"}
     
+    new_user = User(user_id=uid, created_at=datetime.utcnow())
+    db.add(new_user)
+    db.commit()
+    return {"status": "ok", "message": "User berhasil ditambahkan"}
+
 @router.get("/saldo/{uid}")
-def get_saldo(uid: str):
-    db: Session = SessionLocal()
+def get_saldo(uid: str, db: Session = Depends(get_db)):
     poin = db.query(Poin).filter_by(user_id=uid).first()
     return {"saldo": poin.total if poin else 0}
 
 @router.get("/riwayat/{uid}")
-def get_riwayat(uid: str):
-    db: Session = SessionLocal()
+def get_riwayat(uid: str, db: Session = Depends(get_db)):
     hasil = db.query(Riwayat).filter_by(user_id=uid).all()
     return {
         "riwayat": [
@@ -43,21 +38,17 @@ def get_riwayat(uid: str):
                 "type": x.type,
                 "amount": x.amount,
                 "time": x.time.isoformat()
-            }
-            for x in hasil
+            } for x in hasil
         ]
     }
 
 @router.get("/referral/{uid}")
-def get_ref(uid: str):
-    db: Session = SessionLocal()
+def get_ref(uid: str, db: Session = Depends(get_db)):
     jumlah = db.query(Referral).filter_by(referrer=uid).count()
     return {"jumlah": jumlah}
 
 @router.get("/statistik")
-def statistik():
-    db: Session = SessionLocal()
-
+def statistik(db: Session = Depends(get_db)):
     total_user = db.query(User).count()
     total_poin = db.query(Poin).with_entities(Poin.total).all()
     total_tarik = db.query(Penarikan).count()
