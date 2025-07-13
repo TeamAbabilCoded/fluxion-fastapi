@@ -4,27 +4,30 @@ from sqlalchemy.orm import Session
 from database import SessionLocal
 from config import ADMIN_PASSWORD
 from models.models import User, Poin, Penarikan, Verifikasi, Riwayat, Referral
+from fastapi.templating import Jinja2Templates
 import httpx
 
+
 router = APIRouter()
+templates = Jinja2Templates(directory="templates")
 
 # Halaman Login Admin
 @router.get("/dashboard-admin", response_class=HTMLResponse)
 def login(request: Request):
-    return request.app.templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse("login.html", {"request": request})
 
 # Proses Login & Tampilkan Dashboard
 @router.post("/dashboard-admin", response_class=HTMLResponse)
 def dashboard(request: Request, password: str = Form(...)):
     if password != ADMIN_PASSWORD:
-        return request.app.templates.TemplateResponse("login.html", {
+        return templates.TemplateResponse("login.html", {
             "request": request,
             "error": "Password salah. Silakan coba lagi.",
             "success": False
         })
 
     db: Session = SessionLocal()
-    return request.app.templates.TemplateResponse("dashboard.html", {
+    return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "success": True,
         "data": db.query(Poin).all(),
