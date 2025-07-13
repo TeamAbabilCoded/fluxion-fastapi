@@ -16,6 +16,9 @@ class StartSessionRequest(BaseModel):
     user_id: str
     username: str = ""
 
+class StartSessionRequest(BaseModel):
+    user_id: str
+
 class ReferralRequest(BaseModel):
     user_id: str
     ref_id: str
