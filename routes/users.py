@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from schemas.schemas import StartSessionRequest
+from schemas.schemas import ReferralRequest
 from models.models import User, Poin, Riwayat, Referral, Penarikan, Verifikasi
 from database import get_db  # Ganti SessionLocal manual dengan Depends
 
