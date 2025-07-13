@@ -4,13 +4,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 # Router modular
-from schemas.schemas import ReferralRequest
 from routes.auth import router as auth_router
 from routes.tarik import router as tarik_router
 from routes.poin import router as poin_router
 from routes.users import router as user_router
-from routes.auth import router as auth_router
-from models.models import Referral, User
 from routes.referral import router as referral_router
 
 # Inisialisasi DB
