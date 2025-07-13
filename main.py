@@ -236,43 +236,49 @@ async def ajukan_tarik(req: Request):
 
 @router.post("/konfirmasi_tarik")
 async def konfirmasi_tarik(req: Request):
-    data = await req.json()
     try:
+        data = await req.json()
+        print("DATA MASUK:", data)
+
         user_id = int(data.get("user_id"))
         jumlah = int(data.get("jumlah", 0))
         status = data.get("status")
-    except (ValueError, TypeError):
-        raise HTTPException(status_code=400, detail="Data tidak valid")
+        print(f"Parsed: user_id={user_id}, jumlah={jumlah}, status={status}")
 
-    if jumlah <= 0 or status not in ["diterima", "ditolak"]:
-        raise HTTPException(status_code=400, detail="Data tidak valid")
+        if not user_id or jumlah <= 0 or status not in ["diterima", "ditolak"]:
+            raise HTTPException(status_code=400, detail="Data tidak valid")
 
-    db = SessionLocal()
-    try:
-        penarikan = db.query(Penarikan).filter_by(
-            user_id=user_id, amount=jumlah, status="pending"
-        ).first()
-        if not penarikan:
-            raise HTTPException(status_code=404, detail="Penarikan tidak ditemukan")
-
-        penarikan.status = status
-        if status == "ditolak":
-            poin = db.query(Poin).filter_by(user_id=user_id).first()
-            if poin:
-                poin.total += jumlah
-
+        db = SessionLocal()
         try:
+            penarikan = db.query(Penarikan).filter_by(
+                user_id=user_id, amount=jumlah, status="pending"
+            ).first()
+            if not penarikan:
+                print("Penarikan tidak ditemukan")
+                raise HTTPException(status_code=404, detail="Penarikan tidak ditemukan")
+
+            penarikan.status = status
+            if status == "ditolak":
+                poin = db.query(Poin).filter_by(user_id=user_id).first()
+                if poin:
+                    poin.total += jumlah
+                    print(f"Poin dikembalikan: +{jumlah}")
+
             db.commit()
-        except Exception:
+        except Exception as e:
             db.rollback()
-            raise
+            print("❌ Error saat commit:", e)
+            raise HTTPException(status_code=500, detail="Gagal memproses data")
+        finally:
+            db.close()
 
-    finally:
-        db.close()
+        asyncio.create_task(kirim_notif(user_id, f"✅ Penarikan diterima" if status=="diterima" else "❌ Penarikan ditolak"))
 
-    asyncio.create_task(kirim_notif(user_id, f"✅ Penarikan diterima" if status=="diterima" else "❌ Penarikan ditolak"))
+        return {"status": "ok", "message": f"Penarikan {status}"}
 
-    return {"status": "ok", "message": f"Penarikan {status}"}
+    except Exception as e:
+        print("❌ INTERNAL ERROR:", e)
+        raise HTTPException(status_code=500, detail="Terjadi kesalahan internal")
 
 # Fungsi notifikasi Telegram
 async def kirim_notif(user_id, pesan):
