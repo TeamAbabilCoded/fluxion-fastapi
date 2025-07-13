@@ -25,6 +25,20 @@ async def create_user(data: StartSessionRequest, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "ok", "message": "User berhasil ditambahkan"}
 
+@router.get("/statistik")
+def statistik(db: Session = Depends(get_db)):
+    total_user = db.query(User).count()
+    total_poin = db.query(func.sum(Poin.total)).scalar() or 0  # Lebih aman
+    total_tarik = db.query(Penarikan).count()
+    total_verifikasi = db.query(Verifikasi).count()
+
+    return {
+        "total_user": total_user,
+        "total_poin": total_poin,
+        "total_tarik": total_tarik,
+        "total_verifikasi": total_verifikasi
+    }
+
 @router.get("/{uid}")
 def get_user(uid: int):
     db = SessionLocal()
@@ -53,18 +67,4 @@ def get_riwayat(uid: str, db: Session = Depends(get_db)):
                 "time": x.time.isoformat()
             } for x in hasil
         ]
-    }
-
-@router.get("/statistik")
-def statistik(db: Session = Depends(get_db)):
-    total_user = db.query(User).count()
-    total_poin = db.query(func.sum(Poin.total)).scalar() or 0  # Lebih aman
-    total_tarik = db.query(Penarikan).count()
-    total_verifikasi = db.query(Verifikasi).count()
-
-    return {
-        "total_user": total_user,
-        "total_poin": total_poin,
-        "total_tarik": total_tarik,
-        "total_verifikasi": total_verifikasi
     }
