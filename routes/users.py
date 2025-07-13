@@ -15,12 +15,17 @@ def ping():
 async def create_user(data: StartSessionRequest):
     uid = data.user_id
     db = SessionLocal()
-    user = db.query(User).filter_by(user_id=uid).first()
-    if not user:
-        user = User(user_id=uid, created_at=datetime.utcnow())
-        db.add(user)
+    try:
+        user = db.query(User).filter_by(user_id=uid).first()
+        if user:
+            return {"status": "ok", "message": "User sudah ada"}
+        
+        new_user = User(user_id=uid, created_at=datetime.utcnow())
+        db.add(new_user)
         db.commit()
-    return {"status": "ok", "message": "User ditambahkan"}
+        return {"status": "ok", "message": "User berhasil ditambahkan"}
+    finally:
+        db.close()
     
 @router.get("/saldo/{uid}")
 def get_saldo(uid: str):
