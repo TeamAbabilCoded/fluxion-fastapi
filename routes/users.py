@@ -8,6 +8,17 @@ router = APIRouter()
 @router.get("/ping")
 def ping():
     return {"message": "user route aktif"}
+
+@router.post("/user")
+async def create_user(data: StartSessionRequest):
+    uid = data.user_id
+    db = SessionLocal()
+    user = db.query(User).filter_by(user_id=uid).first()
+    if not user:
+        user = User(user_id=uid, created_at=datetime.utcnow())
+        db.add(user)
+        db.commit()
+    return {"status": "ok", "message": "User ditambahkan"}
     
 @router.get("/saldo/{uid}")
 def get_saldo(uid: str):
