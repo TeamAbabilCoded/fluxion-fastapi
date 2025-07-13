@@ -1,16 +1,19 @@
 import os
 from datetime import datetime
-from fastapi.responses import JSONResponse
-from fastapi import FastAPI, APIRouter, Request, HTTPException, status, Depends
-from fastapi import APIRouter
-from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
+
+# FastAPI Core
+from fastapi import FastAPI, APIRouter, Request, HTTPException, status, Depends, Form
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+
+# SQLAlchemy
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+
+# Config dan lainnya
 from config import BOT_TOKEN, ADMIN_PASSWORD, DATABASE_URL
 import httpx
 from aiogram import Bot
