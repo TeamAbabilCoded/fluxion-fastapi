@@ -34,7 +34,7 @@ def get_user(uid: str):
         db.add(user)
         db.commit()
     
-    return {"user_id": uid, "total": user.total}
+    return {"user_id": uid, "total": user.total}
     
 @router.get("/saldo/{uid}")
 def get_saldo(uid: str, db: Session = Depends(get_db)):
