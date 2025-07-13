@@ -237,13 +237,17 @@ async def ajukan_tarik(req: Request):
 @router.post("/konfirmasi_tarik")
 async def konfirmasi_tarik(req: Request):
     data = await req.json()
-    user_id = int(data.get("user_id"))
-    jumlah = int(data.get("jumlah", 0))
-    status = data.get("status")
-    if not user_id or jumlah <= 0 or status not in ["diterima", "ditolak"]:
+    try:
+        user_id = int(data.get("user_id"))
+        jumlah = int(data.get("jumlah", 0))
+        status = data.get("status")
+    except (ValueError, TypeError):
         raise HTTPException(status_code=400, detail="Data tidak valid")
 
-    db = SessionLocal()  # ✍️ penting
+    if jumlah <= 0 or status not in ["diterima", "ditolak"]:
+        raise HTTPException(status_code=400, detail="Data tidak valid")
+
+    db = SessionLocal()
     try:
         penarikan = db.query(Penarikan).filter_by(
             user_id=user_id, amount=jumlah, status="pending"
@@ -257,12 +261,16 @@ async def konfirmasi_tarik(req: Request):
             if poin:
                 poin.total += jumlah
 
-        db.commit()
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+
     finally:
         db.close()
 
-    pesan = ("✅ Penarikan diterima" if status=="diterima" else "❌ Penarikan ditolak")
-    asyncio.create_task(kirim_notif(user_id, pesan))
+    asyncio.create_task(kirim_notif(user_id, f"✅ Penarikan diterima" if status=="diterima" else "❌ Penarikan ditolak"))
 
     return {"status": "ok", "message": f"Penarikan {status}"}
 
