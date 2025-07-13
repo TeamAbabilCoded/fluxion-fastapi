@@ -10,7 +10,7 @@ from schemas.schemas import (
 )
 from fastapi import Depends
 from sqlalchemy.orm import Session
-from src.database import get_db
+from database import get_db
 from datetime import datetime
 import httpx
 from config import BOT_TOKEN
