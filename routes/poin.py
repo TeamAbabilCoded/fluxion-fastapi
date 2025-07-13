@@ -20,12 +20,22 @@ BOT_API = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 async def start_session(data: StartSessionRequest):
     uid = data.user_id
     db = SessionLocal()
-    user = db.query(Poin).filter_by(user_id=uid).first()
-    if not user:
-        user = Poin(user_id=uid, total=0)
-        db.add(user)
-    user.telega_start = datetime.utcnow()
+
+    # ✅ Cek dan tambahkan ke tabel 'users'
+    user_exist = db.query(User).filter_by(user_id=uid).first()
+    if not user_exist:
+        db.add(User(user_id=uid, created_at=datetime.utcnow()))
+
+    # ✅ Cek dan tambahkan ke tabel 'poin'
+    poin = db.query(Poin).filter_by(user_id=uid).first()
+    if not poin:
+        poin = Poin(user_id=uid, total=0)
+        db.add(poin)
+
+    # ✅ Update start session
+    poin.telega_start = datetime.utcnow()
     db.commit()
+
     return {"status": "ok", "message": "Session dimulai"}
 
 # Tambah poin (klaim reward)
