@@ -24,8 +24,8 @@ async def create_user(data: StartSessionRequest, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "ok", "message": "User berhasil ditambahkan"}
 
-@router.get("/user/{uid}")
-def get_user(uid: str):
+@router.get("/{uid}")
+def get_user(uid: int):
     db = SessionLocal()
     user = db.query(Poin).filter_by(user_id=uid).first()
     
