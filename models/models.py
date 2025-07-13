@@ -1,13 +1,8 @@
 from sqlalchemy import Column, Integer, String, DateTime, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
-from pydantic import BaseModel
 from datetime import datetime
 
 Base = declarative_base()
-
-class StartSessionRequest(BaseModel):
-    user_id: str
-    username: str = ""
 
 class User(Base):
     __tablename__ = "users"
