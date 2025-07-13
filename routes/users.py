@@ -12,15 +12,14 @@ router = APIRouter()
 def ping():
     return {"message": "✅ User route aktif"}
 
-@router.post("/user")
-async def create_user(data: dict, db: Session = Depends(get_db)):
-    uid = data.get("user_id")
+@router.post("/")
+async def create_user(data: StartSessionRequest, db: Session = Depends(get_db)):
+    uid = data.user_id
     user = db.query(User).filter_by(user_id=uid).first()
     if user:
         return {"status": "ok", "message": "User sudah ada"}
     
-    new_user = User(user_id=uid, created_at=datetime.utcnow())
-    db.add(new_user)
+    db.add(User(user_id=uid, created_at=datetime.utcnow()))
     db.commit()
     return {"status": "ok", "message": "User berhasil ditambahkan"}
 
