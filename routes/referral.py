@@ -7,7 +7,7 @@ from config import BOT_TOKEN
 
 router = APIRouter()
 
-@router.post("/")
+@router.post("")
 async def create_referral(data: ReferralRequest, db: Session = Depends(get_db)):
     # Pastikan referrer ada
     referrer = db.query(User).filter_by(user_id=data.ref_id).first()
