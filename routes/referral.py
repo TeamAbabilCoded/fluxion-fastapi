@@ -22,10 +22,21 @@ async def create_referral(data: ReferralRequest, db: Session = Depends(get_db)):
     if existing:
         return {"status": "ok", "message": "Sudah direferensikan sebelumnya"}
 
+    # Catat referral
     referral = Referral(referrer=data.ref_id, referred=data.user_id)
     db.add(referral)
+
+    # Tambahkan poin ke referrer
+    poin_referrer = db.query(Poin).filter_by(user_id=data.ref_id).first()
+    if not poin_referrer:
+        # Jika belum ada data poin, buat baru
+        poin_referrer = Poin(user_id=data.ref_id, total=1000)
+        db.add(poin_referrer)
+    else:
+        poin_referrer.total += 1000
+
     db.commit()
-    return {"status": "ok", "message": "Referral dicatat"}
+    return {"status": "ok", "message": "Referral dicatat dan poin telah ditambahkan"}
 
 @router.get("/referral/{uid}")
 def get_ref(uid: str, db: Session = Depends(get_db)):
