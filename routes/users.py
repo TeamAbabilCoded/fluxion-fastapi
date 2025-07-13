@@ -1,6 +1,7 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from database import get_db
 from models.models import User, Poin, Riwayat, Referral, Penarikan, Verifikasi
@@ -57,7 +58,7 @@ def get_riwayat(uid: str, db: Session = Depends(get_db)):
 @router.get("/statistik")
 def statistik(db: Session = Depends(get_db)):
     total_user = db.query(User).count()
-    total_poin = sum([p.total for p in db.query(Poin).all()])
+    total_poin = db.query(func.sum(Poin.total)).scalar() or 0  # Lebih aman
     total_tarik = db.query(Penarikan).count()
     total_verifikasi = db.query(Verifikasi).count()
 
