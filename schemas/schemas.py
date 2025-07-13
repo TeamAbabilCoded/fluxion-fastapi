@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PositiveInt
 from typing import Annotated
 from datetime import datetime
 
@@ -28,8 +28,8 @@ class AddPoinRequest(BaseModel):
     amount: PositiveInt
 
 
-class KirimPoinRequest(BaseModel):
-    user_id: UserIDStr
+class AddPoinRequest(BaseModel):
+    user_id: int
     amount: PositiveInt
 
 
