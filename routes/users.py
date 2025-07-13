@@ -50,13 +50,13 @@ def get_ref(uid: str, db: Session = Depends(get_db)):
 @router.get("/statistik")
 def statistik(db: Session = Depends(get_db)):
     total_user = db.query(User).count()
-    total_poin = db.query(Poin).with_entities(Poin.total).all()
+    total_poin = sum([p.total for p in db.query(Poin).all()])
     total_tarik = db.query(Penarikan).count()
     total_verifikasi = db.query(Verifikasi).count()
 
     return {
         "total_user": total_user,
-        "total_poin": sum(p[0] for p in total_poin),
+        "total_poin": total_poin,
         "total_tarik": total_tarik,
         "total_verifikasi": total_verifikasi
     }
