@@ -24,6 +24,27 @@ async def create_user(data: StartSessionRequest, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "ok", "message": "User berhasil ditambahkan"}
 
+@router.post("/referral")
+async def create_referral(data: ReferralRequest, db: Session = Depends(get_db)):
+    # Cek apakah user referral sudah ada
+    referrer_exists = db.query(User).filter_by(user_id=data.ref_id).first()
+    if not referrer_exists:
+        raise HTTPException(status_code=404, detail="Referrer tidak ditemukan")
+
+    # Cegah user referral ke diri sendiri
+    if data.user_id == data.ref_id:
+        raise HTTPException(status_code=400, detail="Tidak boleh refer ke diri sendiri")
+
+    # Cek apakah sudah pernah direferensikan sebelumnya
+    existing = db.query(Referral).filter_by(referred=data.user_id).first()
+    if existing:
+        return {"status": "ok", "message": "Sudah direferensikan sebelumnya"}
+
+    referral = Referral(referrer=data.ref_id, referred=data.user_id)
+    db.add(referral)
+    db.commit()
+    return {"status": "ok", "message": "Referral dicatat"}
+
 @router.get("/saldo/{uid}")
 def get_saldo(uid: str, db: Session = Depends(get_db)):
     poin = db.query(Poin).filter_by(user_id=uid).first()
