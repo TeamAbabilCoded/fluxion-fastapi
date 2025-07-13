@@ -9,7 +9,7 @@ from routes.auth import router as auth_router
 from routes.tarik import router as tarik_router
 from routes.poin import router as poin_router
 from routes.users import router as user_router
-from routes.admin import router as admin_router
+from routes.auth import router as auth_router
 from models.models import Referral, User
 
 # Inisialisasi DB
@@ -39,7 +39,7 @@ app.include_router(tarik_router, prefix="/tarik")
 app.include_router(poin_router, prefix="/poin")
 app.include_router(user_router, prefix="/user")
 app.include_router(referral_router, prefix="")
-app.include_router(admin_router, prefix="")
+app.include_router(auth_router)
 
 # Root endpoint
 @app.get("/")
