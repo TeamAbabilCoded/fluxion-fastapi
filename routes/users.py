@@ -5,6 +5,10 @@ from models.models import Poin, Riwayat, Referral, User, Verifikasi, Penarikan
 
 router = APIRouter()
 
+@router.get("/ping")
+def ping():
+    return {"message": "user route aktif"}
+    
 @router.get("/saldo/{uid}")
 def get_saldo(uid: str):
     db: Session = SessionLocal()
