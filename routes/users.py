@@ -13,8 +13,8 @@ def ping():
     return {"message": "✅ User route aktif"}
 
 @router.post("/")
-async def create_user(data: StartSessionRequest, db: Session = Depends(get_db)):
-    uid = data.user_id
+async def create_user(data: dict, db: Session = Depends(get_db)):
+    uid = data.get("user_id")
     user = db.query(User).filter_by(user_id=uid).first()
     if user:
         return {"status": "ok", "message": "User sudah ada"}
