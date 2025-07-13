@@ -19,7 +19,8 @@ async def create_user(data: StartSessionRequest, db: Session = Depends(get_db)):
     if user:
         return {"status": "ok", "message": "User sudah ada"}
     
-    db.add(User(user_id=uid, created_at=datetime.utcnow()))
+    new_user = User(user_id=uid, created_at=datetime.utcnow())
+    db.add(new_user)
     db.commit()
     return {"status": "ok", "message": "User berhasil ditambahkan"}
 
