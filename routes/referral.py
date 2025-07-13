@@ -4,6 +4,7 @@ from database import get_db
 from schemas.schemas import ReferralRequest
 from models.models import Referral, User, Poin
 from config import BOT_TOKEN
+import httpx
 
 router = APIRouter()
 
