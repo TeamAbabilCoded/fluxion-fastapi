@@ -26,3 +26,8 @@ async def create_referral(data: ReferralRequest, db: Session = Depends(get_db)):
     db.add(referral)
     db.commit()
     return {"status": "ok", "message": "Referral dicatat"}
+
+@router.get("/referral/{uid}")
+def get_ref(uid: str, db: Session = Depends(get_db)):
+    jumlah = db.query(Referral).filter_by(referrer=uid).count()
+    return {"jumlah": jumlah}
