@@ -1,27 +1,44 @@
-from pydantic import BaseModel, Field, conint, constr
+from pydantic import BaseModel, Field
+from typing import Annotated
+from datetime import datetime
+
+# Validasi numeric
+UserIDStr = Annotated[str, Field(description="ID user, bebas string")]
+UserIDInt = Annotated[int, Field(ge=1, description="ID user sebagai integer")]
+PositiveInt = Annotated[int, Field(gt=0)]
+MinimalTarik = Annotated[int, Field(ge=100_000)]
+NonEmptyStr = Annotated[str, Field(min_length=1)]
+NomorStr = Annotated[str, Field(min_length=5)]
+StatusTarik = Annotated[str, Field(pattern="^(diterima|ditolak)$")]
+
 
 class StartSessionRequest(BaseModel):
-    user_id: str = Field(..., description="ID user, bebas string apa saja")
+    user_id: UserIDStr
+
 
 class AddPoinRequest(BaseModel):
-    user_id: str = Field(..., description="ID user, bebas string")
-    amount: conint(gt=0) = Field(..., description="Jumlah poin, harus lebih dari 0")
+    user_id: UserIDStr
+    amount: PositiveInt
+
 
 class KirimPoinRequest(BaseModel):
-    user_id: str = Field(..., description="ID user, bebas string")
-    amount: conint(gt=0) = Field(..., description="Jumlah poin yang dikirim, harus > 0")
+    user_id: UserIDStr
+    amount: PositiveInt
+
 
 class AjukanTarikRequest(BaseModel):
-    user_id: int = Field(..., description="ID user sebagai integer")
-    amount: conint(ge=100000) = Field(..., description="Minimal penarikan 100.000")
-    metode: constr(min_length=1) = Field(..., description="Metode penarikan, contoh: Dana, OVO")
-    nomor: constr(min_length=5) = Field(..., description="Nomor tujuan penarikan")
+    user_id: UserIDInt
+    amount: MinimalTarik
+    metode: NonEmptyStr
+    nomor: NomorStr
+
 
 class KonfirmasiTarikRequest(BaseModel):
-    user_id: int = Field(..., description="ID user sebagai integer")
-    jumlah: conint(gt=0) = Field(..., description="Jumlah penarikan")
-    status: constr(regex="^(diterima|ditolak)$") = Field(..., description="Status penarikan, diterima atau ditolak")
+    user_id: UserIDInt
+    jumlah: PositiveInt
+    status: StatusTarik
+
 
 class VerifikasiRequest(BaseModel):
-    user_id: str = Field(..., description="ID user, bebas string")
-    input: str = Field(..., description="Input verifikasi dari user")
+    user_id: UserIDStr
+    input: NonEmptyStr
