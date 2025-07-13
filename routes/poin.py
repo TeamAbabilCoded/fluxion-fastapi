@@ -99,10 +99,9 @@ async def simpan_verifikasi(data: VerifikasiRequest):
 
 # Kirim poin ke user (oleh admin)
 @router.post("/kirim_poin")
-async def kirim_poin(data: KirimPoinRequest):
+async def kirim_poin(data: KirimPoinRequest, db: Session = Depends(get_db)):
     uid = data.user_id
     amount = data.amount
-    db = SessionLocal()
     poin = db.query(Poin).filter_by(user_id=uid).first()
     if not poin:
         poin = Poin(user_id=uid, total=0)
