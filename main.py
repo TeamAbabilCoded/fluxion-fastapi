@@ -211,7 +211,7 @@ def get_ref(uid: str):
 @app.post("/ajukan_tarik")
 async def ajukan_tarik(req: Request):
     data = await req.json()
-    uid = str(data.get("user_id"))
+    uid = int(data.get("user_id"))
     amount = int(data.get("amount"))
     metode = data.get("metode")
     nomor = data.get("nomor")
