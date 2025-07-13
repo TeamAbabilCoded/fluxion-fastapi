@@ -42,11 +42,6 @@ def get_riwayat(uid: str, db: Session = Depends(get_db)):
         ]
     }
 
-@router.get("/referral/{uid}")
-def get_ref(uid: str, db: Session = Depends(get_db)):
-    jumlah = db.query(Referral).filter_by(referrer=uid).count()
-    return {"jumlah": jumlah}
-
 @router.get("/statistik")
 def statistik(db: Session = Depends(get_db)):
     total_user = db.query(User).count()
