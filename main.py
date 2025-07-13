@@ -39,7 +39,7 @@ app.include_router(auth_router, prefix="/auth")
 app.include_router(tarik_router, prefix="/tarik")
 app.include_router(poin_router, prefix="/poin")
 app.include_router(user_router, prefix="/user")
-app.include_router(referral_router, prefix="")
+app.include_router(referral_router, prefix="/referral")
 app.include_router(auth_router)
 
 # Root endpoint
