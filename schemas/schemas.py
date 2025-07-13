@@ -14,7 +14,7 @@ StatusTarik = Annotated[str, Field(pattern="^(diterima|ditolak)$")]
 
 class StartSessionRequest(BaseModel):
     user_id: str
-    username: str = "
+    username: str = ""
 
 class ReferralRequest(BaseModel):
     user_id: str
