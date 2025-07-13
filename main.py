@@ -11,6 +11,7 @@ from routes.poin import router as poin_router
 from routes.users import router as user_router
 from routes.auth import router as auth_router
 from models.models import Referral, User
+from routes.referral import router as referral_router
 
 # Inisialisasi DB
 from database import init_db
