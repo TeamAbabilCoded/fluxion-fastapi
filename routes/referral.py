@@ -6,7 +6,7 @@ from models.models import Referral, User, Poin
 
 router = APIRouter()
 
-@router.post("/referral")
+@router.post("/")
 async def create_referral(data: ReferralRequest, db: Session = Depends(get_db)):
     # Pastikan referrer ada
     referrer = db.query(User).filter_by(user_id=data.ref_id).first()
