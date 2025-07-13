@@ -12,7 +12,7 @@ router = APIRouter()
 def ping():
     return {"message": "✅ User route aktif"}
 
-@router.post("/")
+@router.post("/user")
 async def create_user(data: dict, db: Session = Depends(get_db)):
     uid = data.get("user_id")
     user = db.query(User).filter_by(user_id=uid).first()
