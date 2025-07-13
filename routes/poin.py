@@ -37,8 +37,17 @@ async def add_poin(data: AddPoinRequest):
     db = SessionLocal()
 
     poin = db.query(Poin).filter_by(user_id=uid).first()
-    if not poin or not poin.telega_start:
-        raise HTTPException(status_code=400, detail="Session tidak ditemukan.")
+
+    # ✅ Buat otomatis jika user belum ada
+    if not poin:
+        poin = Poin(user_id=uid, total=0)
+        db.add(poin)
+        db.commit()
+        db.refresh(poin)
+
+    # ✅ Validasi session iklan aktif
+    if not poin.telega_start:
+        raise HTTPException(status_code=400, detail="Session tidak ditemukan. Silakan mulai ulang.")
 
     durasi = (now - poin.telega_start).total_seconds()
     if durasi < 30:
