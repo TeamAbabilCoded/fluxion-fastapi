@@ -41,13 +41,13 @@ async def create_referral(data: ReferralRequest, db: Session = Depends(get_db)):
     db.refresh(poin_referrer)
     
     bot_api_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    message = "🎉 Kamu mendapatkan Rp 1000 poin karena berhasil mereferensikan user baru!"
+    notif_text = "🎉 Kamu mendapatkan Rp 1000 poin karena berhasil mereferensikan user baru!"
 
     async with httpx.AsyncClient() as client:
         try:
             await client.post(bot_api_url, data={
                 "chat_id": data.ref_id,
-                "text": message
+                "text": notif_text
             })
         except Exception as e:
             print(f"Gagal mengirim notifikasi ke user {data.ref_id}: {e}")
