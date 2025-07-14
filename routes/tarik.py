@@ -7,6 +7,9 @@ from datetime import datetime
 import asyncio, httpx
 from config import BOT_TOKEN
 
+import logging
+logger = logging.getLogger("uvicorn.error")
+
 router = APIRouter()
 BOT_API = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
