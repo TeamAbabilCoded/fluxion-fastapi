@@ -5,6 +5,8 @@ from schemas.schemas import ReferralRequest
 from models.models import Referral, User, Poin
 from config import BOT_TOKEN
 import httpx
+import logging
+
 
 router = APIRouter()
 
@@ -25,8 +27,10 @@ async def create_referral(data: ReferralRequest, db: Session = Depends(get_db)):
         return {"status": "ok", "message": "Sudah direferensikan sebelumnya"}
 
     # Debug sebelum pemanggilan model Referral
-    print("DEBUG: Referral =", Referral)
-    print("DEBUG: Type of Referral =", type(Referral))
+logger = logging.getLogger(__name__)
+
+logger.warning(f"DEBUG: Referral = {Referral}")
+logger.warning(f"DEBUG: Type of Referral = {type(Referral)}")
 
 
     
