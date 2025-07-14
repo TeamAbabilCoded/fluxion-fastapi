@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 
 # Router modular
 from routes.auth import router as auth_router
+from routes.notif import router as notif_router
 from routes.tarik import router as tarik_router
 from routes.poin import router as poin_router
 from routes.users import router as user_router
@@ -31,9 +32,9 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-
 # Include route admin panel
 app.include_router(auth_router)
+app.include_router(notif_router)
 
 # Include semua router dengan prefix
 app.include_router(tarik_router, prefix="/tarik")
