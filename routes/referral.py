@@ -25,8 +25,8 @@ async def create_referral(data: ReferralRequest, db: Session = Depends(get_db)):
         return {"status": "ok", "message": "Sudah direferensikan sebelumnya"}
 
     # Catat referral
-    referral = Referral(referrer=data.ref_id, referred=data.user_id)
-    db.add(referral)
+    new_referral = Referral(referrer=data.ref_id, referred=data.user_id)
+    db.add(new_referral)
 
     # Tambahkan poin ke referrer
     poin_referrer = db.query(Poin).filter_by(user_id=data.ref_id).first()
