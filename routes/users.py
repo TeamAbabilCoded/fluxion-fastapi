@@ -31,6 +31,7 @@ def statistik(db: Session = Depends(get_db)):
     total_user = db.query(User).count()
     total_poin = db.query(func.sum(Poin.total)).scalar() or 0  # Lebih aman
     total_tarik = db.query(Penarikan).count()
+    pending_tarik = db.query(Penarikan).filter_by(status="pending").count()
     total_verifikasi = db.query(Verifikasi).count()
 
     return {
