@@ -18,26 +18,40 @@ async def ajukan_tarik(data: AjukanTarikRequest):
     nomor = data.nomor
 
     db: Session = SessionLocal()
-    poin = db.query(Poin).filter_by(user_id=uid).first()
+    try:
+        poin = db.query(Poin).filter_by(user_id=uid).first()
 
-    if not poin or poin.total < amount:
-        raise HTTPException(status_code=400, detail="Saldo tidak cukup")
+        if not poin or poin.total < amount:
+            raise HTTPException(status_code=400, detail="Saldo tidak cukup")
 
-    poin.total -= amount
-    db.add(poin)
+        poin.total -= amount
+        db.add(poin)  # pastikan perubahan poin tersimpan
+
+        tarik = Penarikan(
+            user_id=uid,
+            amount=amount,
+            metode=metode,
+            nomor=nomor,
+            time=datetime.utcnow(),
+            status="pending"
+        )
+        db.add(tarik)
+        db.commit()
+
+        # Notifikasi ke user (opsional tapi disarankan)
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+                data={
+                    "chat_id": uid,
+                    "text": f"✅ Penarikan sebesar Rp{amount:,} via {metode} telah diajukan dan sedang diproses."
+                }
+            )
+
+        return {"status": "ok", "message": "Penarikan diajukan"}
+    finally:
+        db.close()
     
-    tarik = Penarikan(
-        user_id=uid,
-        amount=amount,
-        metode=metode,
-        nomor=nomor,
-        time=datetime.utcnow(),
-        status="pending"
-    )
-    db.add(tarik)
-    db.commit()
-    return {"status": "ok", "message": "Penarikan diajukan"}
-
 @router.post("/konfirmasi_tarik")
 async def konfirmasi_tarik(data: KonfirmasiTarikRequest):
     user_id = data.user_id
