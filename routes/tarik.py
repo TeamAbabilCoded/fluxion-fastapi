@@ -92,8 +92,9 @@ async def kirim_notif(user_id, pesan):
             "parse_mode": "Markdown"
         })
 
+
 @router.get("/approve/{user_id}/{amount}")
-def approve_withdrawal(user_id: str, amount: int):
+async def approve_withdrawal(user_id: str, amount: int):
     db = SessionLocal()
     penarikan = db.query(Penarikan).filter_by(user_id=user_id, amount=amount, status="pending").first()
     if not penarikan:
@@ -101,10 +102,24 @@ def approve_withdrawal(user_id: str, amount: int):
 
     penarikan.status = "diterima"
     db.commit()
+
+    # Kirim pesan notifikasi ke Telegram user
+    try:
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+                data={
+                    "chat_id": user_id,
+                    "text": f"✅ Penarikan Rp {amount} kamu telah disetujui dan sedang diproses."
+                }
+            )
+    except Exception as e:
+        print(f"Error kirim notifikasi approve: {e}")
+
     return {"status": "ok", "message": "Penarikan disetujui"}
 
 @router.get("/reject/{user_id}/{amount}")
-def reject_withdrawal(user_id: str, amount: int):
+async def reject_withdrawal(user_id: str, amount: int):
     db = SessionLocal()
     penarikan = db.query(Penarikan).filter_by(user_id=user_id, amount=amount, status="pending").first()
     if not penarikan:
@@ -112,4 +127,18 @@ def reject_withdrawal(user_id: str, amount: int):
 
     penarikan.status = "ditolak"
     db.commit()
+
+    # Kirim pesan notifikasi ke Telegram user
+    try:
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+                data={
+                    "chat_id": user_id,
+                    "text": f"❌ Penarikan Rp {amount} kamu ditolak. Silakan periksa kembali data kamu."
+                }
+            )
+    except Exception as e:
+        print(f"Error kirim notifikasi reject: {e}")
+
     return {"status": "ok", "message": "Penarikan ditolak"}
