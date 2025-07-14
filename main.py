@@ -31,8 +31,11 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+
+# Include route admin panel
+app.include_router(auth_router)
+
 # Include semua router dengan prefix
-app.include_router(auth_router, prefix="/auth")
 app.include_router(tarik_router, prefix="/tarik")
 app.include_router(poin_router, prefix="/poin")
 app.include_router(user_router, prefix="/user")
