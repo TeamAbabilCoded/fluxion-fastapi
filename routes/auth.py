@@ -48,7 +48,7 @@ async def broadcast(request: Request):
     async with httpx.AsyncClient() as client:
         for u in semua:
             try:
-                await client.post("http://localhost:8000/notif", json={
+                await client.post("https://fluxion-fastapi.onrender.com/notif", json={
                     "user_id": u.user_id,
                     "message": f"📢 Pesan dari Admin:\n\n{pesan}"
                 })
