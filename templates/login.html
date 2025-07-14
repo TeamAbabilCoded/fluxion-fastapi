@@ -2,8 +2,13 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Penting untuk responsif -->
   <title>Login Admin - Fluxion Faucet</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
@@ -12,12 +17,13 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
+      padding: 16px;
     }
 
     .login-box {
       background-color: #1e293b;
-      padding: 40px;
+      padding: 30px 20px;
       border-radius: 12px;
       box-shadow: 0 0 15px #3b82f6;
       width: 100%;
@@ -69,10 +75,25 @@
     }
 
     footer {
-      position: absolute;
-      bottom: 10px;
+      text-align: center;
+      margin-top: 20px;
       font-size: 13px;
-      color: #64748b;
+      color: #94a3b8;
+    }
+
+    @media (max-width: 480px) {
+      .login-box {
+        padding: 25px 15px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      input[type=password],
+      input[type=submit] {
+        font-size: 15px;
+      }
     }
   </style>
   <script>
@@ -93,7 +114,7 @@
       <input type="password" name="password" placeholder="Masukkan Password Admin" required>
       <input type="submit" value="Masuk">
     </form>
+    <footer>&copy; Fluxion Faucet 2025</footer>
   </div>
-  <footer>&copy; Fluxion Faucet 2025</footer>
 </body>
 </html>
