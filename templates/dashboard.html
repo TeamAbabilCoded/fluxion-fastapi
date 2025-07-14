@@ -147,59 +147,57 @@
 
   <div class="container">
     <div class="stats">
-      <div class="card">
-        <h3>?? Total User</h3>
-        <p>{{ data.values() | map('int', default=0) | reject('equalto', 0) | sum }}</p>
-      </div>
-      <div class="card">
-        <h3>?? Total Poin</h3>
-        <p>{{ data.values() | sum }}</p>
-      </div>
-      <div class="card">
-        <h3>?? Penarikan</h3>
-        <p>{{ penarikan.values() | map(attribute='_len_') | sum }}</p>
-      </div>
-      <div class="card">
-        <h3>?? Verifikasi</h3>
-        <p>{{ verifikasi|length }}</p>
-      </div>
+<div class="card">
+  <h3>👥 Total User</h3>
+  <p>{{ user|length }}</p>
+</div>
+<div class="card">
+  <h3>💰 Total Poin</h3>
+  <p>{{ data | map(attribute='total') | sum }}</p>
+</div>
+<div class="card">
+  <h3>🏦 Jumlah Penarikan</h3>
+  <p>{{ penarikan | length }}</p>
+</div>
+<div class="card">
+  <h3>✅ Verifikasi</h3>
+  <p>{{ verifikasi | length }}</p>
+</div>
     </div>
 
-    <h2>?? Permintaan Penarikan</h2>
-    {% if penarikan %}
-    <table>
-      <thead>
-        <tr>
-          <th>User ID</th>
-          <th>Metode</th>
-          <th>Nomor</th>
-          <th>Jumlah</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for uid, items in penarikan.items() %}
-          {% for item in items %}
-          <tr>
-            <td>{{ uid }}</td>
-            <td>{{ item.metode }}</td>
-            <td>{{ item.nomor }}</td>
-            <td>{{ item.amount }}</td>
-            <td>
-              <a href="/approve/{{ uid }}/{{ item.amount }}" class="btn btn-accept">?</a>
-              <a href="/reject/{{ uid }}/{{ item.amount }}" class="btn btn-reject">?</a>
-            </td>
-          </tr>
-          {% endfor %}
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-      <p>Tidak ada permintaan penarikan saat ini.</p>
-    {% endif %}
+<h2>📤 Permintaan Penarikan</h2>
+{% if penarikan %}
+<table>
+  <thead>
+    <tr>
+      <th>User ID</th>
+      <th>Metode</th>
+      <th>Nomor</th>
+      <th>Jumlah</th>
+      <th>Aksi</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in penarikan %}
+    <tr>
+      <td>{{ item.user_id }}</td>
+      <td>{{ item.metode }}</td>
+      <td>{{ item.nomor }}</td>
+      <td>{{ item.amount }}</td>
+      <td>
+        <a href="/approve/{{ item.user_id }}/{{ item.amount }}" class="btn btn-accept">✅</a>
+        <a href="/reject/{{ item.user_id }}/{{ item.amount }}" class="btn btn-reject">❌</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <p>Tidak ada permintaan penarikan saat ini.</p>
+{% endif %}
 
     <div class="message-box">
-      <h3>?? Kirim Pesan ke Semua User</h3>
+      <h3>🔔 Kirim Pesan ke Semua User</h3>
       <form method="post" action="/broadcast">
         <textarea name="pesan" placeholder="Tulis pesan di sini..." required></textarea>
         <input type="submit" value="Kirim Pesan">
