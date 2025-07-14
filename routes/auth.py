@@ -50,7 +50,7 @@ async def broadcast(request: Request):
             try:
                 await client.post("http://159.89.195.47:8000/notif", json={
                     "user_id": u.user_id,
-                    "message": f"📢 Pesan dari Admin:\n\n{pesan}"
+                    "message": f"{pesan}"
                 })
                 sukses += 1
             except:
