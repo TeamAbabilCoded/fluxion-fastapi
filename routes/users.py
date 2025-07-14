@@ -37,6 +37,7 @@ def statistik(db: Session = Depends(get_db)):
         "total_user": total_user,
         "total_poin": total_poin,
         "total_tarik": total_tarik,
+        "pending_tarik": pending_tarik,
         "total_verifikasi": total_verifikasi
     }
 
