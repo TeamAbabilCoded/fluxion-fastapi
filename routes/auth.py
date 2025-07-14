@@ -30,7 +30,7 @@ def dashboard(request: Request, password: str = Form(...)):
         "request": request,
         "success": True,
         "data": db.query(Poin).all(),
-        "penarikan": db.query(Penarikan).all(),
+        "penarikan": db.query(Penarikan).filter(Penarikan.status == "pending").all(),
         "verifikasi": db.query(Verifikasi).all(),
         "riwayat": db.query(Riwayat).all(),
         "user": db.query(User).all(),
