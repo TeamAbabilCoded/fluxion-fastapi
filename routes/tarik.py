@@ -24,6 +24,8 @@ async def ajukan_tarik(data: AjukanTarikRequest):
         raise HTTPException(status_code=400, detail="Saldo tidak cukup")
 
     poin.total -= amount
+    db.add(poin)
+    
     tarik = Penarikan(
         user_id=uid,
         amount=amount,
