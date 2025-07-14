@@ -12,6 +12,7 @@ BOT_API = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
 @router.post("/ajukan_tarik")
 async def ajukan_tarik(data: AjukanTarikRequest):
+    logger.info(f"[INFO] Data diterima: {data}")
     uid = data.user_id
     amount = data.amount
     metode = data.metode
