@@ -32,8 +32,6 @@ logger = logging.getLogger(__name__)
 logger.warning(f"DEBUG: Referral = {Referral}")
 logger.warning(f"DEBUG: Type of Referral = {type(Referral)}")
 
-
-    
     # Catat referral
     new_referral = Referral(referrer=data.ref_id, referred=data.user_id)
     db.add(new_referral)
