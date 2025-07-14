@@ -91,3 +91,25 @@ async def kirim_notif(user_id, pesan):
             "text": pesan,
             "parse_mode": "Markdown"
         })
+
+@router.get("/approve/{user_id}/{amount}")
+def approve_withdrawal(user_id: str, amount: int):
+    db = SessionLocal()
+    penarikan = db.query(Penarikan).filter_by(user_id=user_id, amount=amount, status="pending").first()
+    if not penarikan:
+        raise HTTPException(status_code=404, detail="Permintaan penarikan tidak ditemukan")
+
+    penarikan.status = "diterima"
+    db.commit()
+    return {"status": "ok", "message": "Penarikan disetujui"}
+
+@router.get("/reject/{user_id}/{amount}")
+def reject_withdrawal(user_id: str, amount: int):
+    db = SessionLocal()
+    penarikan = db.query(Penarikan).filter_by(user_id=user_id, amount=amount, status="pending").first()
+    if not penarikan:
+        raise HTTPException(status_code=404, detail="Permintaan penarikan tidak ditemukan")
+
+    penarikan.status = "ditolak"
+    db.commit()
+    return {"status": "ok", "message": "Penarikan ditolak"}
