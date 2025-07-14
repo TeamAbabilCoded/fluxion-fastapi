@@ -24,6 +24,12 @@ async def create_referral(data: ReferralRequest, db: Session = Depends(get_db)):
     if existing:
         return {"status": "ok", "message": "Sudah direferensikan sebelumnya"}
 
+    # Debug sebelum pemanggilan model Referral
+    print("DEBUG: Referral =", Referral)
+    print("DEBUG: Type of Referral =", type(Referral))
+
+
+    
     # Catat referral
     new_referral = Referral(referrer=data.ref_id, referred=data.user_id)
     db.add(new_referral)
