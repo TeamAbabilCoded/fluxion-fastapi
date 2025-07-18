@@ -1,5 +1,5 @@
 import httpx
-from config import API_BASE_URL
+from config import API_BASE
 
 async def cek_syarat_referral(user_id: int) -> tuple[bool, int, int]:
     """
@@ -15,7 +15,7 @@ async def cek_syarat_referral(user_id: int) -> tuple[bool, int, int]:
     async with httpx.AsyncClient() as client:
         try:
             # Cek apakah user sudah approved
-            resp_approved = await client.get(f"{API_BASE_URL}/approved/{user_id}")
+            resp_approved = await client.get(f"{API_BASE}/approved/{user_id}")
             if resp_approved.status_code == 200 and resp_approved.json().get("approved"):
                 return True, 0, 0
         except Exception:
@@ -23,7 +23,7 @@ async def cek_syarat_referral(user_id: int) -> tuple[bool, int, int]:
 
         try:
             # Cek jumlah referral aktif user
-            resp_ref = await client.get(f"{API_BASE_URL}/referral/{user_id}")
+            resp_ref = await client.get(f"{API_BASE}/referral/{user_id}")
             if resp_ref.status_code == 200:
                 referral_data = resp_ref.json()
                 aktif = len(referral_data.get("referral_list", []))
