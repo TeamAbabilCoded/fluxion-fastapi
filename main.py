@@ -9,7 +9,7 @@ from routes.tarik import router as tarik_router
 from routes.poin import router as poin_router
 from routes.users import router as user_router
 from routes.referral import router as referral_router
-from routers import approve_user
+from routes import approve_user
 
 # Inisialisasi DB
 from database import init_db
