@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from database import SessionLocal
 from models.models import Penarikan, Poin
 from schemas.schemas import AjukanTarikRequest, KonfirmasiTarikRequest
+from utils.referral import cek_syarat_referral
 from datetime import datetime
 import asyncio, httpx
 from config import BOT_TOKEN
@@ -20,6 +21,18 @@ async def ajukan_tarik(data: AjukanTarikRequest):
     amount = data.amount
     metode = data.metode
     nomor = data.nomor
+
+    # Cek syarat referral dulu, karena fungsi ini async, kita harus pakai event loop
+    is_ok, jumlah_ref, target = await cek_syarat_referral(uid)
+    if not is_ok:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                f"❗️ Kami memperhatikan bahwa beberapa referral Anda tidak aktif di bot, "
+                f"jadi sekarang Anda perlu mengundang 5 teman untuk menarik!\n\n"
+                f"Anda telah mengundang: {jumlah_ref}/{target}"
+            )
+        )
 
     db: Session = SessionLocal()
     try:
