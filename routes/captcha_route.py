@@ -14,7 +14,6 @@ def start_captcha_session(payload: UserIdPayload, db: Session = Depends(get_db))
     user_id = payload.user_id
     token = str(uuid.uuid4())
     new_session = CaptchaSession(
-        id=str(uuid.uuid4()),
         user_id=user_id,
         token=token,
         is_used=False,
