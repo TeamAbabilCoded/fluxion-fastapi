@@ -64,3 +64,9 @@ async def create_referral(data: ReferralRequest, db: Session = Depends(get_db)):
 def get_ref(uid: str, db: Session = Depends(get_db)):
     jumlah = db.query(Referral).filter_by(referrer=uid).count()
     return {"jumlah": jumlah}
+
+@router.get("/list/{user_id}")
+def get_referral_list(user_id: int, db: Session = Depends(get_db)):
+    referrals = db.query(Referral).filter(Referral.referrer == user_id).all()
+    referral_list = [r.referred for r in referrals]
+    return {"referral_list": referral_list}
