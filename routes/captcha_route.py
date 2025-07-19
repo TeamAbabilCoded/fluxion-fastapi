@@ -1,5 +1,3 @@
-from schemas.captcha_schema import CaptchaPayload
-from captcha.verify_captcha import verify_hcaptcha_token
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from database import get_db
@@ -7,6 +5,8 @@ from models.models import CaptchaSession
 from datetime import datetime
 import uuid
 
+from schemas.captcha_schema import UserIdPayload, CaptchaPayload
+from captcha.verify_captcha import verify_hcaptcha_token
 router = APIRouter()
 
 @router.post("/start_session")
