@@ -48,7 +48,8 @@ class Penarikan(Base):
 
 class CaptchaSession(Base):
     __tablename__ = "captcha_session"
-    user_id = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String, nullable=False)
     token = Column(String, unique=True, nullable=False)
     is_used = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
