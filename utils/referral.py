@@ -27,7 +27,7 @@ async def cek_syarat_referral(user_id: int) -> tuple[bool, int, int]:
             if resp_ref.status_code == 200:
                 referral_data = resp_ref.json()
                 aktif = len(referral_data.get("referral_list", []))
-                target = 5  # bisa diubah sesuai kebutuhan
+                target = aktif + 5  # bisa diubah sesuai kebutuhan
                 return (aktif >= target), aktif, target
         except Exception:
             pass
