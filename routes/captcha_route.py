@@ -26,9 +26,24 @@ def start_captcha_session(user_id: str, db: Session = Depends(get_db)):
     return {"status": "success", "token": token}
 
 @router.post("/verify_captcha")
-async def verify_captcha(payload: CaptchaPayload):
+async def verify_captcha(payload: CaptchaPayload, db: Session = Depends(get_db)):
+    # 1. Verifikasi ke hCaptcha
     is_valid = await verify_hcaptcha_token(payload.token)
-    if is_valid:
-        # Di sini kamu bisa tandai user sudah lolos captcha
-        return {"status": "ok", "message": "Captcha valid"}
-    return {"status": "error", "message": "Captcha tidak valid"}
+    if not is_valid:
+        return {"status": "error", "message": "Captcha tidak valid"}
+
+    # 2. Cek token session di database
+    session = db.query(CaptchaSession).filter_by(
+        user_id=payload.user_id,
+        token=payload.session_token,
+        is_used=False
+    ).first()
+
+    if not session:
+        return {"status": "error", "message": "Sesi captcha tidak ditemukan atau sudah digunakan"}
+
+    # 3. Tandai sesi sebagai sudah digunakan
+    session.is_used = True
+    db.commit()
+
+    return {"status": "success", "message": "Captcha berhasil diverifikasi"}
