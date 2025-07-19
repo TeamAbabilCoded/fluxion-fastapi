@@ -10,6 +10,7 @@ from routes.poin import router as poin_router
 from routes.users import router as user_router
 from routes.referral import router as referral_router
 from routes import approve_user
+from routes import captcha_route
 
 # Inisialisasi DB
 from database import init_db
@@ -41,6 +42,7 @@ app.include_router(tarik_router, prefix="/tarik")
 app.include_router(poin_router, prefix="/poin")
 app.include_router(user_router, prefix="/user")
 app.include_router(referral_router, prefix="/referral")
+app.include_router(captcha_route.router, prefix="/captcha")
 
 # Root endpoint
 @app.get("/")
