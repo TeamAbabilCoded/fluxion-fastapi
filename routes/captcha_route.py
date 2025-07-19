@@ -32,7 +32,7 @@ async def verify_captcha(payload: CaptchaPayload, db: Session = Depends(get_db))
     if not is_valid:
         return {"status": "error", "message": "Captcha tidak valid"}
 
-    # 2. Cek token session di database
+    # 2. Verifikasi session token
     session = db.query(CaptchaSession).filter_by(
         user_id=payload.user_id,
         token=payload.session_token,
@@ -42,8 +42,9 @@ async def verify_captcha(payload: CaptchaPayload, db: Session = Depends(get_db))
     if not session:
         return {"status": "error", "message": "Sesi captcha tidak ditemukan atau sudah digunakan"}
 
-    # 3. Tandai sesi sebagai sudah digunakan
+    # 3. Tandai sebagai sudah digunakan
     session.is_used = True
     db.commit()
 
     return {"status": "success", "message": "Captcha berhasil diverifikasi"}
+
