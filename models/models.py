@@ -45,3 +45,10 @@ class Penarikan(Base):
     nomor = Column(String)
     time = Column(DateTime)
     status = Column(String, default="pending")
+
+class CaptchaSession(Base):
+    __tablename__ = "captcha_session"
+    user_id = Column(String, primary_key=True)
+    token = Column(String, unique=True, nullable=False)
+    is_used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
