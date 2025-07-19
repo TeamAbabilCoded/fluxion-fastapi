@@ -23,7 +23,7 @@ async def cek_syarat_referral(user_id: int) -> tuple[bool, int, int]:
 
         try:
             # Cek jumlah referral aktif user
-            resp_ref = await client.get(f"{API_BASE}/referral/{user_id}")
+            resp_ref = await client.get(f"{API_BASE}/referral/list/{user_id}")
             if resp_ref.status_code == 200:
                 referral_data = resp_ref.json()
                 aktif = len(referral_data.get("referral_list", []))
