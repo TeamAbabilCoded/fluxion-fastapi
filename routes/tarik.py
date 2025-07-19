@@ -28,9 +28,16 @@ async def ajukan_tarik(data: AjukanTarikRequest):
         raise HTTPException(
             status_code=403,
             detail=(
-                f"❗️ Kami memperhatikan bahwa beberapa referral Anda tidak aktif di bot, "
-                f"jadi sekarang Anda perlu mengundang 5 teman untuk menarik!\n\n"
-                f"Anda telah mengundang: {jumlah_ref}/{target}"
+                f"🔔 *Informasi Aktivitas Referral Anda*\n\n"
+                f"Terima kasih telah menggunakan layanan kami.\n\n"
+                f"Saat ini, sistem mendeteksi bahwa dari total *{jumlah_ref} referral* yang Anda undang, "
+                f"belum memenuhi kriteria sebagai *referral aktif*.\n\n"
+                f"Untuk melanjutkan proses penarikan saldo, silakan pastikan Anda telah mengundang minimal "
+                f"*5 teman yang benar-benar aktif* menggunakan bot.\n\n"
+                f"Langkah ini kami terapkan demi menjaga kualitas dan integritas sistem reward.\n\n"
+                f"Apabila ada pertanyaan lebih lanjut, jangan ragu untuk menghubungi tim dukungan kami.\n\n"
+                f"_Hormat kami,_\n"
+                f"*Tim Fluxion Faucet*"
             )
         )
 
