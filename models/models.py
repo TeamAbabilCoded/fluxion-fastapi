@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, String, DateTime, BigInteger, Boolean
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
+import uuid
 
 Base = declarative_base()
 
@@ -48,7 +50,8 @@ class Penarikan(Base):
 
 class CaptchaSession(Base):
     __tablename__ = "captcha_session"
-    user_id = Column(String, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String, nullable=False)
     token = Column(String, unique=True, nullable=False)
     is_used = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
