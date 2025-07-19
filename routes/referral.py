@@ -67,6 +67,6 @@ def get_ref(uid: str, db: Session = Depends(get_db)):
 
 @router.get("/list/{user_id}")
 def get_referral_list(user_id: int, db: Session = Depends(get_db)):
-    referrals = db.query(Referral).filter(Referral.referrer == user_id).all()
+    referrals = db.query(Referral).filter(Referral.referrer == user_id_str).all()
     referral_list = [r.referred for r in referrals]
     return {"referral_list": referral_list}
