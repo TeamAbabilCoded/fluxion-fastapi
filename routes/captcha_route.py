@@ -9,7 +9,7 @@ import uuid
 
 router = APIRouter()
 
-@router.post("/captcha/start_session")
+@router.post("/start_session")
 def start_captcha_session(user_id: str, db: Session = Depends(get_db)):
     token = str(uuid.uuid4())
 
