@@ -56,3 +56,8 @@ class TukarDiamondRequest(BaseModel):
     game: str
     id_game: str
     diamond: int
+
+class KonfirmasiVoucherRequest(BaseModel):  # ← Tambahkan ini
+    user_id: str
+    diamond: int
+    status: str
