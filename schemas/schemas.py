@@ -51,7 +51,8 @@ class VerifikasiRequest(BaseModel):
     input: NonEmptyStr
 
 
-class KonfirmasiVoucherRequest(BaseModel):
+class TukarDiamondRequest(BaseModel):
     user_id: str
+    game: str
+    id_game: str
     diamond: int
-    status: str  # "sukses" atau "gagal"
