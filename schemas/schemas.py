@@ -60,4 +60,4 @@ class TukarDiamondRequest(BaseModel):
 class KonfirmasiVoucherRequest(BaseModel):  # ← Tambahkan ini
     user_id: str
     diamond: int
-    status: str
+    status: StatusVoucher
