@@ -11,7 +11,6 @@ from config import BOT_TOKEN
 router = APIRouter()
 BOT_API = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
-
 # ========== TUKAR VOUCHER ==========
 @router.post("/tukar_diamond")
 async def tukar_diamond(data: TukarDiamondRequest):
