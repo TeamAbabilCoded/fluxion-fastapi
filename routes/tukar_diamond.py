@@ -56,6 +56,20 @@ async def kirim_notif(chat_id, pesan):
     async with httpx.AsyncClient() as client:
         await client.post(BOT_API, data={"chat_id": chat_id, "text": pesan})
 
+        # Notifikasi ke user (opsional tapi disarankan)
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+                data={
+                    "chat_id": uid,
+                    "text": f"✅ Penarikan sebesar Rp{amount:,} via {metode} telah diajukan dan sedang diproses."
+                }
+            )
+
+        return {"status": "ok", "message": "Penarikan diajukan"}
+    finally:
+        db.close()
+
 
 # konfirmasi 
 @router.post("/konfirmasi_voucher")
