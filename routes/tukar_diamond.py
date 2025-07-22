@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from models.models import Poin, VoucherGame
+from schemas.schemas import KonfirmasiVoucherRequest
 from datetime import datetime
 import httpx
 from config import BOT_TOKEN
@@ -54,3 +55,84 @@ async def tukar_diamond(data: TukarDiamondRequest):
 async def kirim_notif(chat_id, pesan):
     async with httpx.AsyncClient() as client:
         await client.post(BOT_API, data={"chat_id": chat_id, "text": pesan})
+
+
+# konfirmasi 
+@router.post("/konfirmasi_voucher")
+async def konfirmasi_voucher(data: KonfirmasiVoucherRequest):
+    user_id = data.user_id
+    jumlah = data.diamond
+    status = data.status
+
+    db = SessionLocal()
+    voucher = db.query(VoucherGame).filter_by(
+        user_id=user_id, diamond=jumlah, status="pending"
+    ).first()
+
+    if not voucher:
+        raise HTTPException(status_code=404, detail="Penukaran voucher tidak ditemukan")
+
+    voucher.status = status
+
+    if status == "gagal":
+        poin = db.query(Poin).filter_by(user_id=user_id).first()
+        if poin:
+            poin.total += jumlah * 100  # kembalikan poin jika gagal
+
+    db.commit()
+
+    pesan = (
+        f"✅ Penukaran {jumlah} diamond *{voucher.game}* telah dikonfirmasi dan akan segera diproses."
+        if status == "sukses"
+        else f"❌ Penukaran {jumlah} diamond *{voucher.game}* ditolak. Poin kamu telah dikembalikan."
+    )
+    await kirim_notif(user_id, pesan)
+
+    return {"status": "ok", "message": f"Penukaran {status}"}
+
+
+@router.get("/approve_voucher/{user_id}/{jumlah}")
+async def approve_voucher(user_id: str, jumlah: int):
+    db = SessionLocal()
+    voucher = db.query(VoucherGame).filter_by(
+        user_id=user_id, diamond=jumlah, status="pending"
+    ).first()
+    if not voucher:
+        raise HTTPException(status_code=404, detail="Permintaan voucher tidak ditemukan")
+
+    voucher.status = "sukses"
+    db.commit()
+
+    try:
+        await kirim_notif(user_id, f"✅ Penukaran {jumlah} diamond {voucher.game} kamu telah disetujui.")
+    except Exception as e:
+        print(f"Error kirim notifikasi approve: {e}")
+
+    return {"status": "ok", "message": "Voucher disetujui"}
+
+
+@router.get("/reject_voucher/{user_id}/{jumlah}")
+async def reject_voucher(user_id: str, jumlah: int):
+    db = SessionLocal()
+    voucher = db.query(VoucherGame).filter_by(
+        user_id=user_id, diamond=jumlah, status="pending"
+    ).first()
+    if not voucher:
+        raise HTTPException(status_code=404, detail="Permintaan voucher tidak ditemukan")
+
+    voucher.status = "gagal"
+
+    poin = db.query(Poin).filter_by(user_id=user_id).first()
+    if poin:
+        poin.total += jumlah * 100
+        db.add(poin)
+
+    db.commit()
+
+    try:
+        await kirim_notif(user_id, f"❌ Penukaran {jumlah} diamond {voucher.game} kamu ditolak. Poin telah dikembalikan.")
+    except Exception as e:
+        print(f"Error kirim notifikasi reject: {e}")
+
+    return {"status": "ok", "message": "Voucher ditolak"}
+
