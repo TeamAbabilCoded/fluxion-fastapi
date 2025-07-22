@@ -9,6 +9,7 @@ from routes.tarik import router as tarik_router
 from routes.poin import router as poin_router
 from routes.users import router as user_router
 from routes.referral import router as referral_router
+from routers import tukar_diamond
 from routes import approve_user
 
 # Inisialisasi DB
@@ -35,6 +36,7 @@ templates = Jinja2Templates(directory="templates")
 # Include route admin panel
 app.include_router(auth_router)
 app.include_router(approve_user.router)
+app.include_router(tukar_diamond.router)
 
 # Include semua router dengan prefix
 app.include_router(tarik_router, prefix="/tarik")
