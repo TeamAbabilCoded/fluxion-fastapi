@@ -10,7 +10,7 @@ MinimalTarik = Annotated[int, Field(ge=100_000)]
 NonEmptyStr = Annotated[str, Field(min_length=1)]
 NomorStr = Annotated[str, Field(min_length=5)]
 StatusTarik = Annotated[str, Field(pattern="^(diterima|ditolak)$")]
-
+StatusVoucher = Annotated[str, Field(pattern="^(sukses|gagal)$")] 
 
 class StartSessionRequest(BaseModel):
     user_id: str
