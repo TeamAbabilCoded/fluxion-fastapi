@@ -56,4 +56,4 @@ class VoucherGame(Base):
     id_game = Column(String)
     diamond = Column(Integer)
     time = Column(DateTime)
-    status = Column(String), default="pending")
+    status = Column(String, default="pending")
