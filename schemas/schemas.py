@@ -49,3 +49,9 @@ class KonfirmasiTarikRequest(BaseModel):
 class VerifikasiRequest(BaseModel):
     user_id: UserIDStr
     input: NonEmptyStr
+
+
+class KonfirmasiVoucherRequest(BaseModel):
+    user_id: str
+    diamond: int
+    status: str  # "sukses" atau "gagal"
