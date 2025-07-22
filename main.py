@@ -16,7 +16,7 @@ from routes import approve_user
 from database import init_db
 
 app = FastAPI(title="Fluxion Faucet API")
-tukar_diamond.register_voucher_game(dp)
+tukar_diamond.register_voucher_game(dp, bot)
 # Inisialisasi database
 init_db()
 
