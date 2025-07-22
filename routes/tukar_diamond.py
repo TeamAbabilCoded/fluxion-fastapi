@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from models.models import Poin, VoucherGame
-from schemas.schemas import KonfirmasiVoucherRequest
+from schemas.schemas import TukarDiamondRequest, KonfirmasiVoucherRequest
 from datetime import datetime
 import httpx
 from config import BOT_TOKEN
