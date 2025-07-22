@@ -11,12 +11,8 @@ from config import BOT_TOKEN
 router = APIRouter()
 BOT_API = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
-class TukarDiamondRequest(BaseModel):
-    user_id: str
-    game: str
-    id_game: str
-    diamond: int
 
+# ========== TUKAR VOUCHER ==========
 @router.post("/tukar_diamond")
 async def tukar_diamond(data: TukarDiamondRequest):
     user_id = data.user_id
@@ -31,11 +27,10 @@ async def tukar_diamond(data: TukarDiamondRequest):
     if not poin or poin.total < total_poin:
         raise HTTPException(status_code=400, detail="Saldo poin tidak cukup")
 
-    # Kurangi poin
+    # Kurangi poin dan simpan
     poin.total -= total_poin
     db.add(poin)
 
-    # Simpan riwayat penukaran
     voucher = VoucherGame(
         user_id=user_id,
         game=game,
@@ -47,12 +42,11 @@ async def tukar_diamond(data: TukarDiamondRequest):
     db.add(voucher)
     db.commit()
 
-    # Kirim notifikasi ke user
     await kirim_notif(user_id, f"✅ Penukaran {diamond} diamond {game} sedang diproses.")
-
     return {"status": "ok", "message": "Penukaran berhasil diajukan"}
 
-# konfirmasi 
+
+# ========== KONFIRMASI MANUAL OLEH ADMIN ==========
 @router.post("/konfirmasi_voucher")
 async def konfirmasi_voucher(data: KonfirmasiVoucherRequest):
     user_id = data.user_id
@@ -72,7 +66,8 @@ async def konfirmasi_voucher(data: KonfirmasiVoucherRequest):
     if status == "gagal":
         poin = db.query(Poin).filter_by(user_id=user_id).first()
         if poin:
-            poin.total += jumlah * 100  # kembalikan poin jika gagal
+            poin.total += jumlah * 100
+            db.add(poin)
 
     db.commit()
 
@@ -86,6 +81,7 @@ async def konfirmasi_voucher(data: KonfirmasiVoucherRequest):
     return {"status": "ok", "message": f"Penukaran {status}"}
 
 
+# ========== APPROVE VOUCHER VIA LINK ==========
 @router.get("/approve_voucher/{user_id}/{jumlah}")
 async def approve_voucher(user_id: str, jumlah: int):
     db = SessionLocal()
@@ -98,14 +94,11 @@ async def approve_voucher(user_id: str, jumlah: int):
     voucher.status = "sukses"
     db.commit()
 
-    try:
-        await kirim_notif(user_id, f"✅ Penukaran {jumlah} diamond {voucher.game} kamu telah disetujui.")
-    except Exception as e:
-        print(f"Error kirim notifikasi approve: {e}")
-
+    await kirim_notif(user_id, f"✅ Penukaran {jumlah} diamond {voucher.game} kamu telah disetujui.")
     return {"status": "ok", "message": "Voucher disetujui"}
 
 
+# ========== REJECT VOUCHER VIA LINK ==========
 @router.get("/reject_voucher/{user_id}/{jumlah}")
 async def reject_voucher(user_id: str, jumlah: int):
     db = SessionLocal()
@@ -124,21 +117,18 @@ async def reject_voucher(user_id: str, jumlah: int):
 
     db.commit()
 
-    try:
-        await kirim_notif(user_id, f"❌ Penukaran {jumlah} diamond {voucher.game} kamu ditolak. Poin telah dikembalikan.")
-    except Exception as e:
-        print(f"Error kirim notifikasi reject: {e}")
-
+    await kirim_notif(user_id, f"❌ Penukaran {jumlah} diamond {voucher.game} kamu ditolak. Poin telah dikembalikan.")
     return {"status": "ok", "message": "Voucher ditolak"}
 
-async def kirim_notif(user_id, pesan):
+
+# ========== FUNGSI NOTIFIKASI ==========
+async def kirim_notif(chat_id, pesan):
     async with httpx.AsyncClient() as client:
         await client.post(
-            f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+            BOT_API,
             data={
-                "chat_id": user_id,
+                "chat_id": chat_id,
                 "text": pesan,
                 "parse_mode": "Markdown"
             }
         )
-
