@@ -47,13 +47,3 @@ class Penarikan(Base):
     nomor = Column(String)
     time = Column(DateTime)
     status = Column(String, default="pending")
-
-class VoucherGame(Base):
-    __tablename__ = "voucher_game"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String)
-    game = Column(String)
-    id_game = Column(String)
-    diamond = Column(Integer)
-    status = Column(String, default="pending")
-    time = Column(DateTime, default=datetime.datetime.utcnow)
