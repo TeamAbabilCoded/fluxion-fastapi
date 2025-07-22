@@ -77,3 +77,22 @@ def admin_dashboard_api(db: Session = Depends(get_db)):
         "penarikan_diterima": jumlah_diterima,
         "user_terverifikasi": jumlah_terverifikasi
     }
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_panel(request: Request):
+    db: Session = SessionLocal()
+    
+    user = db.query(User).all()
+    data = db.query(Poin).all()
+    penarikan = db.query(Penarikan).filter_by(status="pending").all()
+    verifikasi = db.query(Verifikasi).all()
+    voucher = db.query(VoucherGame).filter(VoucherGame.status.in_(["pending", "sukses", "gagal"])).all()
+
+    return templates.TemplateResponse("admin.html", {
+        "request": request,
+        "user": user,
+        "data": data,
+        "penarikan": penarikan,
+        "verifikasi": verifikasi,
+        "voucher": voucher  # ini penting
+    })
