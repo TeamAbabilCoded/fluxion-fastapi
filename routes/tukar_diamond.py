@@ -132,18 +132,3 @@ async def kirim_notif(chat_id, pesan):
             }
         )
 
-@router.get("/admin/voucher")
-async def lihat_voucher_game():
-    db = SessionLocal()
-    data = db.query(VoucherGame).order_by(VoucherGame.time.desc()).limit(100).all()
-    hasil = []
-    for item in data:
-        hasil.append({
-            "user_id": item.user_id,
-            "game": item.game,
-            "id_game": item.id_game,
-            "diamond": item.diamond,
-            "status": item.status,
-            "waktu": item.time.strftime("%Y-%m-%d %H:%M:%S")
-        })
-    return hasil
